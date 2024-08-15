@@ -29,7 +29,10 @@ function(make_appimage)
     file(REMOVE_RECURSE "${APPDIR}")       # remove if leftover
     file(MAKE_DIRECTORY "${APPDIR}")
     file(MAKE_DIRECTORY "${APPDIR}/lib")
-    file(COPY "${CMAKE_INSTALL_PREFIX}/bin/lib" DESTINATION "${APPDIR}")
+
+    if(EXISTS "${CMAKE_INSTALL_PREFIX}/bin/lib")
+        file(COPY "${CMAKE_INSTALL_PREFIX}/bin/lib" DESTINATION "${APPDIR}")
+    endif()
 
     # copy executable to appdir
     file(COPY "${ARGS_EXE}" DESTINATION "${APPDIR}" FOLLOW_SYMLINK_CHAIN)
@@ -40,13 +43,13 @@ function(make_appimage)
     # until all the resources are loaded
     file(WRITE "${APPDIR}/AppRun"
         "#!/bin/sh\n"
+        "export RESOURCES_DIR=\"$(pwd)/$(dirname \"$0\")\"\n"
         "cd \"$(dirname \"$0\")\";\n"
-        "export APPDIR=\"$(dirname \"$0\")\"\n"
-        "x-terminal-emulator -e ./${EXE_NAME} $@ && sleep 100 &\n"
+        "x-terminal-emulator -e ./${EXE_NAME} $@ && sleep 10 &\n"
     )
     # NOTE
     # if you also need a terminal
-    # use "x-terminal-emulator -e ./${EXE_NAME} $@ && sleep 1"
+    # use "x-terminal-emulator -e ./${EXE_NAME} $@ && sleep 10"
     # if you only want GUI, use "./${EXE_NAME} $@"
     #
     execute_process(COMMAND chmod +x "${APPDIR}/AppRun")
