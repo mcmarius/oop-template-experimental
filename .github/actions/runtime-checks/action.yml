@@ -1,24 +1,29 @@
 name: 'Runtime checks'
 description: 'Run dynamic analysis tools'
+inputs:  
+  matrix:
+    description: 'Matrix object encoded as json'
+    required: true
+    type: string
 
 runs:
   using: "composite"
   steps:
     - name: Cache tools
       uses: actions/cache@v4
-      if: runner.os == 'Linux' && matrix.runs_msan == true
+      if: ${{ runner.os == 'Linux' && fromJSON(inputs.matrix).runs_msan == true }}
       id: cache-tools
       with:
         path: tools
-        key: tools-clang-${{ matrix.clang_ver }}-stdlib-msan
+        key: tools-clang-${{ fromJSON(inputs.matrix).clang_ver }}-stdlib-msan
 
     - name: Setup memory sanitizer
       shell: bash
-      if: runner.os == 'Linux' && matrix.runs_msan == true && steps.cache-tools.outputs.cache-hit != 'true'
+      if: runner.os == 'Linux' && fromJSON(inputs.matrix).runs_msan == true && steps.cache-tools.outputs.cache-hit != 'true'
       run: |
         mkdir -p tools
         cd tools
-        git clone --depth=1 --branch=llvmorg-${{ matrix.clang_ver_full }} https://github.com/llvm/llvm-project
+        git clone --depth=1 --branch=llvmorg-${{ fromJSON(inputs.matrix).clang_ver_full }} https://github.com/llvm/llvm-project
         cd llvm-project
         # mkdir build; cd build
         sudo ln -s -f /usr/bin/$CC /usr/bin/clang
@@ -37,7 +42,7 @@ runs:
     - name: Sanitizers
       shell: bash
       # run one sanitizer for each env to avoid building extra binaries on one env
-      if: (matrix.runs_asan == true || matrix.runs_msan == true) && runner.os != 'Windows'
+      if: (fromJSON(inputs.matrix).runs_asan == true || fromJSON(inputs.matrix).runs_msan == true) && runner.os != 'Windows'
       # detect_leaks is not supported on macOS
       # env:
       #   ASAN_OPTIONS: detect_leaks=1
@@ -47,14 +52,14 @@ runs:
     - name: Sanitizers (Windows MSVC)
       shell: bash
       # run one sanitizer for each OS to avoid building extra binaries
-      if: matrix.cxx == 'cl' && matrix.runs_asan == true
+      if: fromJSON(inputs.matrix).cxx == 'cl' && fromJSON(inputs.matrix).runs_asan == true
       continue-on-error: true
       run: |
         cat "${INPUT_FILENAME}" | ./${{ env.ZIP_NAME }}/"${EXECUTABLE_NAME}".exe
 
     - name: Valgrind
       shell: bash
-      if: runner.os == 'Linux' && matrix.runs_valgrind == true
+      if: runner.os == 'Linux' && fromJSON(inputs.matrix).runs_valgrind == true
       run: |
         # remove --show-leak-kinds=all (and --track-origins=yes) if there are many leaks in external libs
         cat "${INPUT_FILENAME}" | tr -d '\r' | valgrind \

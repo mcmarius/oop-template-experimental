@@ -32,8 +32,8 @@ defaults:
 
 jobs:
   build-common:
-    name: test # ${{ matrix.name }}
-    runs-on: ubuntu-latest # ${{ matrix.os }}
+    name: build # ${{ fromJSON(inputs.matrix).name }}
+    runs-on: ${{ fromJSON(inputs.matrix).os }}
     timeout-minutes: 8
     permissions:
       attestations: write
@@ -41,8 +41,8 @@ jobs:
       id-token: write
 
     env:
-      CC: ${{ matrix.c }}
-      CXX: ${{ matrix.cxx }}
+      CC: ${{ fromJSON(inputs.matrix).c }}
+      CXX: ${{ fromJSON(inputs.matrix).cxx }}
       VSCMD_SKIP_SENDTELEMETRY: 1
 
       # NOTE: replace with another version if this one does not work
@@ -54,65 +54,64 @@ jobs:
       # MINGW_VER: "14.1.0posix-18.1.7-12.0.0-ucrt-r2/winlibs-x86_64-posix-seh-gcc-14.1.0-mingw-w64ucrt-12.0.0-r2.7z"
       # MINGW_VER: "14.1.0posix-18.1.7-12.0.0-msvcrt-r2/winlibs-x86_64-posix-seh-gcc-14.1.0-mingw-w64msvcrt-12.0.0-r2.7z"
 
-
     steps:
-      - name: debug
-        run: echo ${{ fromJSON(inputs.matrix) }}
-    # strategy:
-    #   fail-fast: false
-    #   matrix: ${{ fromJSON(inputs.matrix) }}
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    # steps:
-    #   - name: Checkout repo
-    #     uses: actions/checkout@v4
+      - name: Set timestamp and zip name
+        run: |
+          echo "TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)" >> ${GITHUB_ENV}
 
-    #   - name: Set timestamp and zip name
-    #     run: |
-    #       echo "TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)" >> ${GITHUB_ENV}
+          # use the full name as prefix: {user_name}_{repo_name} (replace / with _)
+          echo "ZIP_NAME=$(echo "${GITHUB_REPOSITORY}_${{ env.BUILD_TYPE }}_${{ fromJSON(inputs.matrix).os }}_${{ fromJSON(inputs.matrix).cxx }}${{ fromJSON(inputs.matrix).asan_name }}" | sed 's|/|_|')" >> ${GITHUB_ENV}
 
-    #       # use the full name as prefix: {user_name}_{repo_name} (replace / with _)
-    #       echo "ZIP_NAME=$(echo "${GITHUB_REPOSITORY}_${{ env.BUILD_TYPE }}_${{ matrix.os }}_${{ matrix.cxx }}${{ matrix.asan_name }}" | sed 's|/|_|')" >> ${GITHUB_ENV}
+          # or use only the repo name (github does not have a predefined environment variable for this)
+          # the regex splits by / and keeps everything after / without the / character
+          # echo "ZIP_NAME=$(echo "${GITHUB_REPOSITORY}_${{ env.BUILD_TYPE }}_${{ fromJSON(inputs.matrix).os }}_${{ fromJSON(inputs.matrix).cxx }}${{ fromJSON(inputs.matrix).asan_name }}" | sed -E 's|.+/(.+)|\1|')" >> ${GITHUB_ENV}
 
-    #       # or use only the repo name (github does not have a predefined environment variable for this)
-    #       # the regex splits by / and keeps everything after / without the / character
-    #       # echo "ZIP_NAME=$(echo "${GITHUB_REPOSITORY}_${{ env.BUILD_TYPE }}_${{ matrix.os }}_${{ matrix.cxx }}${{ matrix.asan_name }}" | sed -E 's|.+/(.+)|\1|')" >> ${GITHUB_ENV}
+      - name: Install packages
+        uses: ./.github/actions/install-packages
+        with:
+          matrix: ${{ inputs.matrix }}
 
-    #   - name: Install packages
-    #     uses: ./.github/actions/install-packages
+      - name: Configure CMake
+        uses: ./.github/actions/configure-cmake
+        with:
+          matrix: ${{ inputs.matrix }}
+          custom_flags: ${{ fromJSON(inputs.matrix).cmake_flags }}
+          warnings_as_errors: 'ON'
 
-    #   - name: Configure CMake
-    #     uses: ./.github/actions/configure-cmake
-    #     with:
-    #       custom_flags: ${{ matrix.cmake_flags }}
-    #       warnings_as_errors: 'ON'
+      - name: Build
+        run: bash ./scripts/cmake.sh build -t ${{ env.BUILD_TYPE }}
 
-    #   - name: Build
-    #     run: bash ./scripts/cmake.sh build -t ${{ env.BUILD_TYPE }}
+      - name: Install
+        # Use CMake to "install" build artifacts (only interested in CMake registered targets) to our custom artifacts directory
+        run: |
+          bash ./scripts/cmake.sh install -i artifacts -t ${{ env.BUILD_TYPE }}
 
-    #   - name: Install
-    #     # Use CMake to "install" build artifacts (only interested in CMake registered targets) to our custom artifacts directory
-    #     run: |
-    #       bash ./scripts/cmake.sh install -i artifacts -t ${{ env.BUILD_TYPE }}
+      - name: Move artifacts
+        run: |
+          mkdir ${{ env.ZIP_NAME }}
+          mv artifacts/${{ env.BIN_DIR }}/* ${{ env.ZIP_NAME }}
+          ls -la ${{ env.ZIP_NAME }}
 
-    #   - name: Move artifacts
-    #     run: |
-    #       mkdir ${{ env.ZIP_NAME }}
-    #       mv artifacts/${{ env.BIN_DIR }}/* ${{ env.ZIP_NAME }}
-    #       ls -la ${{ env.ZIP_NAME }}
+      - name: Process artifacts
+        uses: ./.github/actions/process-artifacts
+        with:
+          matrix: ${{ inputs.matrix }}
 
-    #   - name: Process artifacts
-    #     uses: ./.github/actions/process-artifacts
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ZIP_NAME }}_${{ env.TIMESTAMP }}
+          path: ${{ env.ZIP_NAME }}
+          retention-days: 30
 
-    #   - name: Upload Artifacts
-    #     uses: actions/upload-artifact@v4
-    #     with:
-    #       name: ${{ env.ZIP_NAME }}_${{ env.TIMESTAMP }}
-    #       path: ${{ env.ZIP_NAME }}
-    #       retention-days: 30
+      - name: Runtime checks
+        uses: ./.github/actions/runtime-checks
+        with:
+          matrix: ${{ inputs.matrix }}
 
-    #   - name: Runtime checks
-    #     uses: ./.github/actions/runtime-checks
-
-    #   - name: Create release
-    #     uses: ./.github/actions/create-release
-    #     if: startsWith(github.ref, 'refs/tags/')
+      - name: Create release
+        uses: ./.github/actions/create-release
+        if: startsWith(github.ref, 'refs/tags/')

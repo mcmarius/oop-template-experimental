@@ -1,5 +1,10 @@
 name: 'Process artifacts'
 description: 'Process artifact files'
+inputs:  
+  matrix:
+    description: 'Matrix object encoded as json'
+    required: true
+    type: string
 
 runs:
   using: "composite"
@@ -13,7 +18,7 @@ runs:
 
     - name: Copy missing dylibs
       shell: bash
-      if: runner.os == 'macOS' && matrix.cxx == 'clang++'
+      if: ${{ runner.os == 'macOS' && fromJSON(inputs.matrix).cxx == 'clang++' }}
       run: |
         if [[ "${BUILD_TYPE}" =~ "Deb" ]]; then
           mkdir lib
@@ -24,7 +29,7 @@ runs:
 
     - name: Copy missing dylibs (g++)
       shell: bash
-      if: runner.os == 'macOS' && startsWith(matrix.cxx, 'g++')
+      if: ${{ runner.os == 'macOS' && startsWith(fromJSON(inputs.matrix).cxx, 'g++') }}
       run: |
         mkdir lib
         cp /opt/homebrew/lib/gcc/13/libstdc++.6.dylib /opt/homebrew/lib/gcc/13/libgcc_s.1.1.dylib lib
@@ -34,7 +39,7 @@ runs:
 
     - name: Copy missing dlls
       shell: bash
-      if: runner.os == 'Windows' && matrix.cxx == 'cl'
+      if: ${{ runner.os == 'Windows' && fromJSON(inputs.matrix).cxx == 'cl' }}
       run: |
         if [[ "${BUILD_TYPE}" =~ "Deb" ]]; then
           # runtime debug DLLs
@@ -63,7 +68,7 @@ runs:
 
     - name: Copy stdlib (MinGW)
       shell: bash
-      if: runner.os == 'Windows' && matrix.cxx == 'g++'
+      if: ${{ runner.os == 'Windows' && fromJSON(inputs.matrix).cxx == 'g++' }}
       # static linking might not work with MinGW, might be easier this way
       run: |
         cp gcc/mingw64/bin/libstdc++-6.dll \

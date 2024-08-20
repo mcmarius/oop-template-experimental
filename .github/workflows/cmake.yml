@@ -67,6 +67,7 @@ jobs:
 
 
   build:
+    name: ${{ matrix.name }}
     permissions:
       attestations: write
       contents: write
