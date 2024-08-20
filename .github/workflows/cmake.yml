@@ -66,7 +66,7 @@ jobs:
         uses: ./.github/actions/clang-tidy
 
 
-  build:
+  build-ubuntu:
     name: ${{ matrix.name }}
     permissions:
       attestations: write
@@ -111,6 +111,20 @@ jobs:
             # This env runs valgrind
             runs_valgrind: true
 
+  build-macos:
+    name: ${{ matrix.name }}
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write
+    uses: ./.github/workflows/build-common.yml
+    with:
+      matrix: ${{ toJson(matrix) }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
           - os: macos-14
             c: clang
             cxx: clang++
@@ -127,6 +141,20 @@ jobs:
             # cmake_flags:
             # cmake_generator: Ninja
 
+  build-windows:
+    name: ${{ matrix.name }}
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write
+    uses: ./.github/workflows/build-common.yml
+    with:
+      matrix: ${{ toJson(matrix) }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
           - os: windows-2022
             c: cl
             cxx: cl
