@@ -1,6 +1,6 @@
 name: 'Runtime checks'
 description: 'Run dynamic analysis tools'
-inputs:  
+inputs:
   matrix:
     description: 'Matrix object encoded as json'
     required: true
@@ -11,7 +11,7 @@ runs:
   steps:
     - name: Cache tools
       uses: actions/cache@v4
-      if: ${{ runner.os == 'Linux' && fromJSON(inputs.matrix).runs_msan == true }}
+      if: runner.os == 'Linux' && fromJSON(inputs.matrix).runs_msan == true
       id: cache-tools
       with:
         path: tools

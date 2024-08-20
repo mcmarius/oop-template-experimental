@@ -18,11 +18,6 @@ runs:
         sudo apt-get install ninja-build
         # https://github.com/llvm/llvm-project/issues/78354
         sudo sysctl vm.mmap_rnd_bits=28
-        #echo ${{ inputs.matrix['runs_msan'] == 'true' }}
-        #echo ${{ inputs.matrix['runs_msan'] == true }}
-        #echo ${{ inputs.matrix.runs_msan == true }}
-        #echo ${{ inputs.matrix.runs_msan == 'true' }}
-        echo ${{ fromJSON(inputs.matrix).runs_msan == 'true' }}
         echo ${{ fromJSON(inputs.matrix).runs_msan == true }}
 
     # Also see https://github.com/actions/runner-images/discussions/9446#discussioncomment-8668538

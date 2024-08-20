@@ -66,7 +66,24 @@ jobs:
         uses: ./.github/actions/clang-tidy
 
 
+  #vars:
+  #  runs-on: ubuntu-22.04
+  #  #outputs:
+  #  #  BUILD_TYPE: ${{ env.BUILD_TYPE }}
+  #  #  EXECUTABLE_NAME: ${{ env.EXECUTABLE_NAME }}
+  #  #  INPUT_FILENAME: ${{ env.INPUT_FILENAME }}
+  #  #  BIN_DIR: ${{ env.BIN_DIR }}
+  #  #  BUILD_DIR: ${{ env.BUILD_DIR }}
+  #  #  EXT_DIR: ${{ env.EXT_DIR }}
+  #  #  GEN_DIR: ${{ env.GEN_DIR }}
+  #  steps:
+  #    - run: |
+  #        echo "Exposing env vars"
+  #        export ENVV=$(jq -n -c '$ENV | to_entries | map(select([.key] | inside(["BUILD_TYPE", "EXECUTABLE_NAME", "INPUT_FILENAME", "BIN_DIR", "BUILD_DIR", "EXT_DIR", "GEN_DIR"])))')
+  #        echo "${ENVV}" >> $GITHUB_OUTPUT
+
   build-ubuntu:
+    #needs: vars
     name: ${{ matrix.name }}
     permissions:
       attestations: write
@@ -75,6 +92,7 @@ jobs:
     uses: ./.github/workflows/build-common.yml
     with:
       matrix: ${{ toJson(matrix) }}
+      #envv: ${{ toJson(needs.vars.outputs.vars) }}
 
     strategy:
       fail-fast: false
@@ -112,6 +130,7 @@ jobs:
             runs_valgrind: true
 
   build-macos:
+    #needs: vars
     name: ${{ matrix.name }}
     permissions:
       attestations: write
@@ -120,6 +139,7 @@ jobs:
     uses: ./.github/workflows/build-common.yml
     with:
       matrix: ${{ toJson(matrix) }}
+      #envv: ${{ toJson(needs.vars.outputs.vars) }}
 
     strategy:
       fail-fast: false
@@ -142,6 +162,7 @@ jobs:
             # cmake_generator: Ninja
 
   build-windows:
+    #needs: vars
     name: ${{ matrix.name }}
     permissions:
       attestations: write
@@ -150,6 +171,7 @@ jobs:
     uses: ./.github/workflows/build-common.yml
     with:
       matrix: ${{ toJson(matrix) }}
+      #envv: ${{ toJson(needs.vars.outputs.vars) }}
 
     strategy:
       fail-fast: false

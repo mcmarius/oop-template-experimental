@@ -8,7 +8,7 @@ on:
         required: true
         type: string
 
-      #env:
+      #envv:
       #  description: 'Environment object encoded as json'
       #  required: true
       #  type: string
@@ -41,6 +41,13 @@ jobs:
       id-token: write
 
     env:
+    #  BUILD_TYPE: ${{ fromJSON(inputs.envv).BUILD_TYPE }}
+    #  EXECUTABLE_NAME: ${{ fromJSON(inputs.envv).EXECUTABLE_NAME }}
+    #  INPUT_FILENAME: ${{ fromJSON(inputs.envv).INPUT_FILENAME }}
+    #  BIN_DIR: ${{ fromJSON(inputs.envv).BIN_DIR }}
+    #  BUILD_DIR: ${{ fromJSON(inputs.envv).BUILD_DIR }}
+    #  EXT_DIR: ${{ fromJSON(inputs.envv).EXT_DIR }}
+    #  GEN_DIR: ${{ fromJSON(inputs.envv).GEN_DIR }}
       CC: ${{ fromJSON(inputs.matrix).c }}
       CXX: ${{ fromJSON(inputs.matrix).cxx }}
       VSCMD_SKIP_SENDTELEMETRY: 1
@@ -60,6 +67,8 @@ jobs:
 
       - name: Set timestamp and zip name
         run: |
+          #echo ${{ inputs.envv }}
+          #echo ${{ inputs.envv.BUILD_TYPE }} >> ${GITHUB_ENV}
           echo "TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)" >> ${GITHUB_ENV}
 
           # use the full name as prefix: {user_name}_{repo_name} (replace / with _)
