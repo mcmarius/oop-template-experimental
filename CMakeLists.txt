@@ -70,12 +70,14 @@ endif()
 
 ###############################################################################
 
+if(APPLE)
+    install(FILES launcher.command DESTINATION ${DESTINATION_DIR})
+    set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "@executable_name")
+endif()
+
 # copy binaries to "bin" folder; these are uploaded as artifacts on each release
 # DESTINATION_DIR is set as "bin" in cmake/Options.cmake:6
 install(TARGETS ${PROJECT_NAME} DESTINATION ${DESTINATION_DIR})
-if(APPLE)
-    install(FILES launcher.command DESTINATION ${DESTINATION_DIR})
-endif()
 
 # copy dependent DLLs to build dir
 # see https://en.sfml-dev.org/forums/index.php?topic=28580.0
