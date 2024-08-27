@@ -12,7 +12,7 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 
 if(APPLE)
-    set(CMAKE_INSTALL_NAME_DIR "@executable_path/lib")
+    set(CMAKE_INSTALL_NAME_DIR "@executable_path")
 endif()
 
 # disable sanitizers when releasing executables without explicitly requested debug info
