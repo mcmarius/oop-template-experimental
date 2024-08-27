@@ -74,10 +74,22 @@ endif()
 # copy binaries to "bin" folder; these are uploaded as artifacts on each release
 # DESTINATION_DIR is set as "bin" in cmake/Options.cmake:6
 install(TARGETS ${PROJECT_NAME} DESTINATION ${DESTINATION_DIR})
+
 if(APPLE)
     install(FILES launcher.command DESTINATION ${DESTINATION_DIR})
     set(frameworks FLAC;freetype;ogg;OpenAL;vorbis;vorbisenc;vorbisfile)
     foreach(framework ${frameworks})
+        # add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        #      COMMAND ${CMAKE_COMMAND} -E copy
+        install(DIRECTORY
+            ${CMAKE_INSTALL_PREFIX}/lib/${framework}.framework
+            DESTINATION ${DESTINATION_DIR}/lib
+        )
+        # add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        #     COMMAND ${CMAKE_COMMAND} -E copy
+        #     ${SFML_SOURCE_DIR}/extlibs/libs-osx/Frameworks/${framework}.framework
+        #     $<TARGET_FILE_DIR:${PROJECT_NAME}>/lib
+        # )
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
           COMMAND install_name_tool -change @rpath/../Frameworks/${framework}.framework/Versions/A/${framework} @executable_path/lib/Frameworks/${framework}.framework/Versions/A/${framework} ${PROJECT_BINARY_DIR}/${PROJECT_NAME}
         )
