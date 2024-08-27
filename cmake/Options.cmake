@@ -11,6 +11,10 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${PROJECT_SOURCE_DIR}/install_dir" CACHE PATH "..." FORCE)
 endif()
 
+if(APPLE)
+    set(CMAKE_INSTALL_NAME_DIR "@executable_path/lib")
+endif()
+
 # disable sanitizers when releasing executables without explicitly requested debug info
 # use generator expressions to set flags correctly in both single and multi config generators
 set(is_debug "$<CONFIG:Debug>")
