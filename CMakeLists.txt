@@ -76,9 +76,12 @@ endif()
 install(TARGETS ${PROJECT_NAME} DESTINATION ${DESTINATION_DIR})
 if(APPLE)
     install(FILES launcher.command DESTINATION ${DESTINATION_DIR})
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-      COMMAND install_name_tool -change @rpath/../Frameworks/freetype.framework/Versions/A/freetype @executable_path/lib/Frameworks/freetype.framework/Versions/A/freetype ${PROJECT_BINARY_DIR}/${PROJECT_NAME}
-    )
+    set(frameworks FLAC;freetype;ogg;OpenAL;vorbis;vorbisenc;vorbisfile)
+    foreach(framework ${frameworks})
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+          COMMAND install_name_tool -change @rpath/../Frameworks/${framework}.framework/Versions/A/${framework} @executable_path/lib/Frameworks/${framework}.framework/Versions/A/${framework} ${PROJECT_BINARY_DIR}/${PROJECT_NAME}
+        )
+    endforeach()
 endif()
 
 # copy dependent DLLs to build dir
