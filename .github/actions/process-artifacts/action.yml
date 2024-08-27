@@ -26,7 +26,7 @@ runs:
         if [[ "${BUILD_TYPE}" =~ "Deb" ]]; then
           install_name_tool -change @rpath/libclang_rt.asan_osx_dynamic.dylib @executable_path/lib/libclang_rt.asan_osx_dynamic.dylib ${{ env.ZIP_NAME }}/${{ env.EXECUTABLE_NAME }}.app/Contents/MacOS/${{ env.EXECUTABLE_NAME }}
         fi
-        ls -1 ${{ env.ZIP_NAME }}/lib | grep framework | xargs -I% ls ${{ env.ZIP_NAME }}/lib/%/Versions/A | grep -v "Resources" | xargs -I% install_name_tool -change @rpath/../Frameworks/%.framework/Versions/A/% @executable_path/lib/%.framework/Versions/A/% ${{ env.ZIP_NAME }}/${{ env.EXECUTABLE_NAME }}.app/Contents/MacOS/${{ env.EXECUTABLE_NAME }}
+        # ls -1 ${{ env.ZIP_NAME }}/lib | grep framework | xargs -I% ls ${{ env.ZIP_NAME }}/lib/%/Versions/A | grep -v "Resources" | xargs -I% install_name_tool -change @rpath/../Frameworks/%.framework/Versions/A/% @executable_path/lib/%.framework/Versions/A/% ${{ env.ZIP_NAME }}/${{ env.EXECUTABLE_NAME }}.app/Contents/MacOS/${{ env.EXECUTABLE_NAME }}
         otool -L ${{ env.ZIP_NAME }}/${{ env.EXECUTABLE_NAME }}.app/Contents/MacOS/${{ env.EXECUTABLE_NAME }}
         mv ${{ env.ZIP_NAME }}/lib ${{ env.ZIP_NAME }}/${{ env.EXECUTABLE_NAME }}.app/Contents/MacOS
         create-dmg "${{ env.EXECUTABLE_NAME }}.dmg" "${{ env.ZIP_NAME }}/${{ env.EXECUTABLE_NAME }}.app"
