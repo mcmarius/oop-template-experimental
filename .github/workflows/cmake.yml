@@ -172,17 +172,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set timestamp and zip name
-        run: |
-          echo "TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)" >> ${GITHUB_ENV}
-
-          # use the full name as prefix: {user_name}_{repo_name} (replace / with _)
-          echo "ZIP_NAME=$(echo "${GITHUB_REPOSITORY}_${{ env.BUILD_TYPE }}_${{ matrix.os }}_${{ matrix.cxx }}${{ matrix.asan_name }}" | sed 's|/|_|')" >> ${GITHUB_ENV}
-
-          # or use only the repo name (github does not have a predefined environment variable for this)
-          # the regex splits by / and keeps everything after / without the / character
-          # echo "ZIP_NAME=$(echo "${GITHUB_REPOSITORY}_${{ env.BUILD_TYPE }}_${{ matrix.os }}_${{ matrix.cxx }}${{ matrix.asan_name }}" | sed -E 's|.+/(.+)|\1|')" >> ${GITHUB_ENV}
-
       - name: Install CMake 4 (Linux)
         shell: bash
         if: runner.os == 'Linux'
@@ -193,6 +182,26 @@ jobs:
           sudo ./cmake-4.0.3-linux-x86_64.sh --skip-license --prefix=/usr/local
           echo "Installed CMake 4"
           cmake --version
+
+      - name: Install CMake 4 (Windows)
+        shell: bash
+        if: runner.os == 'Windows'
+        run: |
+          curl -LO https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-windows-x86_64.zip
+          unzip cmake-4.0.3-windows-x86_64.zip -d $RUNNER_TEMP/cmake
+          echo "$RUNNER_TEMP/cmake/cmake-4.0.3-windows-x86_64/bin" >> $GITHUB_PATH
+
+          
+      - name: Set timestamp and zip name
+        run: |
+          echo "TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)" >> ${GITHUB_ENV}
+
+          # use the full name as prefix: {user_name}_{repo_name} (replace / with _)
+          echo "ZIP_NAME=$(echo "${GITHUB_REPOSITORY}_${{ env.BUILD_TYPE }}_${{ matrix.os }}_${{ matrix.cxx }}${{ matrix.asan_name }}" | sed 's|/|_|')" >> ${GITHUB_ENV}
+
+          # or use only the repo name (github does not have a predefined environment variable for this)
+          # the regex splits by / and keeps everything after / without the / character
+          # echo "ZIP_NAME=$(echo "${GITHUB_REPOSITORY}_${{ env.BUILD_TYPE }}_${{ matrix.os }}_${{ matrix.cxx }}${{ matrix.asan_name }}" | sed -E 's|.+/(.+)|\1|')" >> ${GITHUB_ENV}
 
         
       - name: Install packages
