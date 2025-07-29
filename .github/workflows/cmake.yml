@@ -204,8 +204,10 @@ jobs:
           custom_flags: ${{ matrix.cmake_flags }}
           warnings_as_errors: 'ON'
 
+
       - name: Build
         run: |
+          cmake --version
           bash ./scripts/cmake.sh build -c ${{ env.BUILD_TYPE }}
 
       - name: Install
