@@ -186,6 +186,32 @@ jobs:
       - name: Install packages
         uses: ./.github/actions/install-packages
 
+      - name: Install CMake 4 on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get purge --auto-remove -y cmake
+          wget https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-linux-x86_64.sh
+          chmod +x cmake-4.0.3-linux-x86_64.sh
+          sudo ./cmake-4.0.3-linux-x86_64.sh --skip-license
+
+      - name: Install CMake 4 on Windows
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          curl -LO https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-windows-x86_64.zip
+          unzip cmake-4.0.3-windows-x86_64.zip -d $RUNNER_TEMP/cmake
+          echo "$RUNNER_TEMP/cmake/cmake-4.0.3-windows-x86_64/bin" >> $GITHUB_PATH
+      
+      - name: Install CMake 4 on macOS
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          curl -LO https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-macos-universal.tar.gz
+          tar -xzf cmake-4.0.3-macos-universal.tar.gz
+          sudo cp -r cmake-4.0.3-macos-universal/CMake.app/Contents/bin/* /usr/local/bin/
+
+
       - name: Configure CMake
         uses: ./.github/actions/configure-cmake
         with:
