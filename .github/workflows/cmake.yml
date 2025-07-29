@@ -187,11 +187,12 @@ jobs:
         shell: bash
         if: runner.os == 'Windows'
         run: |
+          TEMP_DIR=$(cmd.exe /c "echo %RUNNER_TEMP%" | tr -d '\r')
           curl -LO https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-windows-x86_64.zip
-          unzip cmake-4.0.3-windows-x86_64.zip -d $RUNNER_TEMP/cmake
-          echo "$RUNNER_TEMP/cmake/cmake-4.0.3-windows-x86_64/bin" >> $GITHUB_PATH
+          unzip cmake-4.0.3-windows-x86_64.zip -d "$TEMP_DIR/cmake"
+          echo "$TEMP_DIR/cmake/cmake-4.0.3-windows-x86_64/bin" >> $GITHUB_PATH
 
-          
+
       - name: Set timestamp and zip name
         run: |
           echo "TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)" >> ${GITHUB_ENV}
