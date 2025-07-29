@@ -183,14 +183,25 @@ jobs:
           echo "Installed CMake 4"
           cmake --version
 
-      - name: Install CMake 4 (Windows)
+      - name: Install CMake 4 (Linux)
         shell: bash
-        if: runner.os == 'Windows'
+        if: runner.os == 'Linux'
         run: |
-          TEMP_DIR=$(cmd.exe /c "echo %RUNNER_TEMP%" | tr -d '\r')
-          curl -LO https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-windows-x86_64.zip
-          unzip cmake-4.0.3-windows-x86_64.zip -d "$TEMP_DIR/cmake"
-          echo "$TEMP_DIR/cmake/cmake-4.0.3-windows-x86_64/bin" >> $GITHUB_PATH
+          curl -LO https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-macos-universal.tar.gz
+          tar -xzf cmake-4.0.3-macos-universal.tar.gz
+          sudo cp -r cmake-4.0.3-macos-universal/CMake.app/Contents/bin/* /usr/local/bin/
+          echo "Installed CMake 4"
+          cmake --version
+
+
+      # - name: Install CMake 4 (Windows)
+      #   shell: bash
+      #   if: runner.os == 'Windows'
+      #   run: |
+      #     TEMP_DIR=$(cmd.exe /c "echo %RUNNER_TEMP%" | tr -d '\r')
+      #     curl -LO https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-windows-x86_64.zip
+      #     unzip cmake-4.0.3-windows-x86_64.zip -d "$TEMP_DIR/cmake"
+      #     echo "$TEMP_DIR/cmake/cmake-4.0.3-windows-x86_64/bin" >> $GITHUB_PATH
 
 
       - name: Set timestamp and zip name
