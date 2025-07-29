@@ -191,8 +191,10 @@ jobs:
           tar -xzf cmake-4.0.3-macos-universal.tar.gz
           sudo cp -R cmake-4.0.3-macos-universal/CMake.app /Applications/
 
-          echo "/Applications/CMake.app/Contents/bin" > $GITHUB_PATH
+          export PATH="/Applications/CMake.app/Contents/bin:$PATH"
+          echo "/Applications/CMake.app/Contents/bin" >> $GITHUB_PATH
 
+          echo "Installed CMake 4"
           which cmake
           cmake --version
 
