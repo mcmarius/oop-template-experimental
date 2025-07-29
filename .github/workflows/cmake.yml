@@ -172,6 +172,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Check CMake version (before install)
+        run: |
+          cmake --version
+
       - name: Install CMake 4 (Linux)
         shell: bash
         if: runner.os == 'Linux'
