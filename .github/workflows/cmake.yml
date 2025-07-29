@@ -183,13 +183,17 @@ jobs:
           echo "Installed CMake 4"
           cmake --version
 
-      - name: Install CMake 4 (Linux)
+      - name: Install CMake 4 (macOS)
+        if: runner.os == 'macOS'
         shell: bash
-        if: runner.os == 'Linux'
         run: |
           curl -LO https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-macos-universal.tar.gz
           tar -xzf cmake-4.0.3-macos-universal.tar.gz
-          sudo cp -r cmake-4.0.3-macos-universal/CMake.app/Contents/bin/* /usr/local/bin/
+          sudo cp -R cmake-4.0.3-macos-universal/CMake.app /Applications/
+          sudo ln -sf /Applications/CMake.app/Contents/bin/cmake /usr/local/bin/cmake
+          sudo ln -sf /Applications/CMake.app/Contents/bin/ctest /usr/local/bin/ctest
+          sudo ln -sf /Applications/CMake.app/Contents/bin/cpack /usr/local/bin/cpack
+          sudo ln -sf /Applications/CMake.app/Contents/bin/cmake-gui /usr/local/bin/cmake-gui
           echo "Installed CMake 4"
           cmake --version
 
