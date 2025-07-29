@@ -198,18 +198,18 @@ jobs:
           which cmake
           cmake --version
 
+      - name: Install CMake 4 (Windows)
+        shell: bash
+        if: runner.os == 'Windows'
+        run: |
+          curl -LO https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-windows-x86_64.zip
+          unzip cmake-4.0.3-windows-x86_64.zip -d cmake
+          echo "${GITHUB_WORKSPACE}/cmake/cmake-4.0.3-windows-x86_64/bin" >> $GITHUB_PATH
+          
+          echo "Installed CMake 4"
+          cmake --version
 
-
-      # - name: Install CMake 4 (Windows)
-      #   shell: bash
-      #   if: runner.os == 'Windows'
-      #   run: |
-      #     TEMP_DIR=$(cmd.exe /c "echo %RUNNER_TEMP%" | tr -d '\r')
-      #     curl -LO https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-windows-x86_64.zip
-      #     unzip cmake-4.0.3-windows-x86_64.zip -d "$TEMP_DIR/cmake"
-      #     echo "$TEMP_DIR/cmake/cmake-4.0.3-windows-x86_64/bin" >> $GITHUB_PATH
-
-
+          
       - name: Set timestamp and zip name
         run: |
           echo "TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)" >> ${GITHUB_ENV}
