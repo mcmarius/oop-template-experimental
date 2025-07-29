@@ -204,12 +204,13 @@ jobs:
         run: |
           curl -LO https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-windows-x86_64.zip
           unzip cmake-4.0.3-windows-x86_64.zip -d cmake
+          export PATH="${GITHUB_WORKSPACE}/cmake/cmake-4.0.3-windows-x86_64/bin:$PATH"
           echo "${GITHUB_WORKSPACE}/cmake/cmake-4.0.3-windows-x86_64/bin" >> $GITHUB_PATH
-          
+
           echo "Installed CMake 4"
           cmake --version
 
-          
+
       - name: Set timestamp and zip name
         run: |
           echo "TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)" >> ${GITHUB_ENV}
