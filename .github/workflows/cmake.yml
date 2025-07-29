@@ -190,14 +190,17 @@ jobs:
           curl -LO https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-macos-universal.tar.gz
           tar -xzf cmake-4.0.3-macos-universal.tar.gz
           sudo cp -R cmake-4.0.3-macos-universal/CMake.app /Applications/
-          sudo ln -sf /Applications/CMake.app/Contents/bin/cmake /usr/local/bin/cmake
-          sudo ln -sf /Applications/CMake.app/Contents/bin/ctest /usr/local/bin/ctest
-          sudo ln -sf /Applications/CMake.app/Contents/bin/cpack /usr/local/bin/cpack
-          sudo ln -sf /Applications/CMake.app/Contents/bin/cmake-gui /usr/local/bin/cmake-gui
-          
-          echo "/Applications/CMake.app/Contents/bin" >> $GITHUB_PATH
+
+          # Add CMake 4 to the front of the PATH — crucial!
+          echo "/Applications/CMake.app/Contents/bin" > cmake-path
+          echo "$PATH" >> cmake-path
+          paste -sd: cmake-path > joined-path
+          export PATH=$(cat joined-path)
+
           echo "Installed CMake 4"
+          which cmake
           cmake --version
+
 
 
       # - name: Install CMake 4 (Windows)
