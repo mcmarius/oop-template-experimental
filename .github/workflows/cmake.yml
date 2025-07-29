@@ -183,6 +183,18 @@ jobs:
           # the regex splits by / and keeps everything after / without the / character
           # echo "ZIP_NAME=$(echo "${GITHUB_REPOSITORY}_${{ env.BUILD_TYPE }}_${{ matrix.os }}_${{ matrix.cxx }}${{ matrix.asan_name }}" | sed -E 's|.+/(.+)|\1|')" >> ${GITHUB_ENV}
 
+      - name: Install CMake 4 (Linux)
+        shell: bash
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get purge --auto-remove -y cmake || true
+          wget https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3-linux-x86_64.sh
+          chmod +x cmake-4.0.3-linux-x86_64.sh
+          sudo ./cmake-4.0.3-linux-x86_64.sh --skip-license --prefix=/usr/local
+          echo "Installed CMake 4"
+          cmake --version
+
+        
       - name: Install packages
         uses: ./.github/actions/install-packages
 
