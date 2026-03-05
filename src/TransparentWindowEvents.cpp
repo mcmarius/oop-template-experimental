@@ -1,0 +1,95 @@
+#include "TransparentWindow.h"
+#include <iostream>
+#include "IPCController.h"
+#include "portable-file-dialogs.h"
+
+namespace transparent {
+
+bool TransparentWindow::pollEvents() {
+    if (!m_window.isOpen()) {
+        return false;
+    }
+
+    bool shouldExit = false;
+
+    while (const std::optional event = m_window.pollEvent()) {
+        if (event->is<sf::Event::Closed>() ||
+            (event->is<sf::Event::KeyPressed>() &&
+             event->getIf<sf::Event::KeyPressed>()->code == sf::Keyboard::Key::Escape)) {
+            m_window.close();
+            shouldExit = true;
+        }
+
+        // Handle mouse click on Sources toggle button or file picker button
+        if (event->is<sf::Event::MouseButtonPressed>()) {
+            const auto& mouseEvent = *event->getIf<sf::Event::MouseButtonPressed>();
+            if (mouseEvent.button == sf::Mouse::Button::Left) {
+                // Get mouse position relative to this window to handle DPI scaling correctly
+                sf::Vector2i mousePosInt = sf::Mouse::getPosition(m_window);
+                // Convert from screen coordinates to world coordinates (accounts for view transforms)
+                sf::Vector2f mousePos = m_window.mapPixelToCoords(mousePosInt);
+
+                // Check if click is on Sources toggle button (toggles picker visibility)
+                sf::FloatRect sourcesToggleBounds(m_sourcesTogglebutton.getPosition(), m_sourcesTogglebutton.getSize());
+                if (sourcesToggleBounds.contains(mousePos)) {
+                    m_sourcePickerOpen = !m_sourcePickerOpen;
+                }
+
+                // Check if click is on a source button (selects that source)
+                if (m_sourcePickerOpen && !m_sourceButtons.empty()) {
+                    for (size_t i = 0; i < m_sourceButtons.size(); ++i) {
+                        sf::FloatRect sourceBounds(m_sourceButtons[i]->getPosition(), m_sourceButtons[i]->getSize());
+                        if (sourceBounds.contains(mousePos)) {
+                            m_selectedSourceIndex = static_cast<int>(i);
+                            std::cout << "Selected source: " << m_sources[i].name << std::endl;
+                            // Write selected source to IPC
+                            writeSelectedSourceToIPC();
+                            // Update Sources button text to show selected source
+                            updateSourcesButtonText();
+                            break;
+                        }
+                    }
+                }
+
+                // Check if click is on file picker button (outside picker background)
+                sf::FloatRect filePickerBounds(m_filePickerButton.getPosition(), m_filePickerButton.getSize());
+                if (filePickerBounds.contains(mousePos)) {
+                    // Use portable file dialog to select a file
+                    // Use multiple filter entries - one per extension for better compatibility
+                    std::vector<std::string> filters = {
+                        "Video Files", "*.webm *.mp4 *.avi *.mkv",
+                        "WebM files", "*.webm",
+                        "MP4 files", "*.mp4",
+                        "AVI files", "*.avi",
+                        "MKV files", "*.mkv",
+                        "All Files", "*"
+                    };
+                    pfd::open_file chooser("Select a video file",
+                                           "",
+                                           filters);
+                    std::vector<std::string> result = chooser.result();
+                    std::cout << "Dialog returned with " << result.size() << " files" << std::endl;
+                    if (!result.empty()) {
+                        std::string filepath = result[0];
+                        std::cout << "Selected file: " << filepath << std::endl;
+                        // Write file:// URL to IPC (overlay→video path)
+                        ipc::IPCController ipc;
+                        ipc::IPCController::Config config;
+                        config.overlayToVideoPath = m_config.overlayToVideoPath;
+                        if (ipc.initialize(config)) {
+                            std::string url = "file://" + filepath;
+                            ipc.writeSelectedSource(url);
+                            std::cout << "Selected source written to IPC: " << url << std::endl;
+                        }
+                    } else {
+                        std::cout << "No file selected" << std::endl;
+                    }
+                }
+            }
+        }
+    }
+
+    return !shouldExit;
+}
+
+} // namespace transparent

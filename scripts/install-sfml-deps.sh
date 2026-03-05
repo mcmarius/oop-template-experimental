@@ -5,7 +5,8 @@
 #
 # Tested only on Debian/Ubuntu and openSUSE.
 #
-# Generated with Nemotron-3-Nano-30B-A3B. Please report any issues.
+# Contributors: Nemotron-3-Nano-30B-A3B, Qwen Code (Qwen3-Coder-Next-GGUF)
+# Please report any issues.
 # ------------------------------------------------------------
 set -euo pipefail
 
@@ -35,6 +36,7 @@ LINUX_DEPS=(
     libfreetype6-dev
     libxi-dev
     xorg
+    libvlc-dev
 )
 
 # ---------- 3. Map logical names → real package names ----------
@@ -52,6 +54,7 @@ declare -A DEB_MAP=(
     [libfreetype6-dev]=libfreetype6-dev
     [libxi-dev]=libxi-dev
     [xorg]=xorg
+    [libvlc-dev]=libvlc-dev
 )
 
 declare -A RPM_MAP=(
@@ -68,6 +71,7 @@ declare -A RPM_MAP=(
     [libfreetype6-dev]=freetype-devel
     [libxi-dev]=libXi-devel
     [xorg]=xorg-x11-server-Xorg           # meta‑package that pulls the whole X server stack
+    [libvlc-dev]=libvlc-devel
 )
 
 declare -A SUSE_MAP=(
@@ -84,6 +88,7 @@ declare -A SUSE_MAP=(
     [libfreetype6-dev]=freetype-devel
     [libxi-dev]=libXi-devel
     [xorg]=xorg-x11-server
+    [libvlc-dev]=libvlc-devel
 )
 
 declare -A ARCH_MAP=(
@@ -100,6 +105,7 @@ declare -A ARCH_MAP=(
     [libfreetype6-dev]=freetype2
     [libxi-dev]=libxi
     [xorg]=xorg-x11-server
+    [libvlc-dev]=libvlc
 )
 
 # ---------- 4. Build the final package list for the detected OS ----------
