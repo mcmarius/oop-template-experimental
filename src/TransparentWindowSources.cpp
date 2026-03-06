@@ -125,6 +125,22 @@ void TransparentWindow::resetSelectedSource() {
     updateSourcesButtonText();
 }
 
+void TransparentWindow::refreshSources() {
+    // Read fresh sources from IPC
+    ipc::IPCController ipc;
+    ipc::IPCController::Config config;
+    config.videoToOverlayPath = m_config.videoToOverlayPath;
+    config.overlayToVideoPath = m_config.overlayToVideoPath;
+
+    if (!ipc.initialize(config)) {
+        std::cerr << "Failed to initialize IPC for refreshing sources" << std::endl;
+        return;
+    }
+
+    std::vector<ipc::StreamingSource> sources = ipc.readStreamingSources();
+    setStreamingSources(sources);
+}
+
 void TransparentWindow::updateSourcesButtonText() {
     if (!m_sourcesToggleButtonText) {
         return;

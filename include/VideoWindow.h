@@ -92,6 +92,17 @@ public:
     /// @return selected source MRL, or empty string if none selected
     std::string getSelectedSourceFromIPC() const;
 
+    /// Toggle play/pause state
+    void playPause();
+
+    /// Check if playback is currently playing
+    /// @return true if playing, false if paused or stopped
+    bool isPlaying();
+
+    /// Read and handle play/pause command from IPC
+    /// @return true if command was received and executed
+    bool handlePlayPauseCommandFromIPC();
+
 private:
     Config m_config;
     sf::RenderWindow m_window;
@@ -103,6 +114,7 @@ private:
     bool m_sourcesAvailable = true;
     std::string m_lastLoadedSource;  ///< Track the last source loaded from IPC to avoid reloading
     std::vector<ipc::StreamingSource> m_lastWrittenSources;  ///< Track last written sources to avoid IPC writes
+    bool m_isStream = false;  ///< Track if current source is a live stream (to skip frames on resume)
 
     /// Detect camera source based on OS
     std::string detectCameraSource();

@@ -20,8 +20,11 @@ bool VideoWindow::start() {
         media.addOption(":input-repeat=65535");
         m_mediaPlayer = VLC::MediaPlayer(media);
 
+        m_isStream = false;
         m_sourcesAvailable = true;
     } else {
+        // Live stream (camera device) - will skip frames on resume
+        m_isStream = true;
         // Create a MediaDiscoverer for video devices
         m_discoverer = VLC::MediaDiscoverer(m_instance, m_cameraSource.c_str());
 
@@ -77,6 +80,7 @@ void VideoWindow::stop() {
             m_discoverer->stop();
         }
         m_started = false;
+        m_isStream = false;  // Reset stream flag on stop
     }
 
     // Clear sources from IPC on stop

@@ -15,7 +15,7 @@
 
 int main() {
     const std::string imageFile = "assets/image.png";
-    const unsigned char alpha = 100;  // ~73% opacity
+    const unsigned char alpha = 100;
 
     // Overlay process starting
 
@@ -110,9 +110,8 @@ int main() {
             overlay.scaleUIElements(originalImageSize, videoSize);
         }
 
-        // Read streaming sources from IPC and update picker
-        std::vector<ipc::StreamingSource> sources = ipc.readStreamingSources();
-        overlay.setStreamingSources(sources);
+        // Sources are now refreshed only when user clicks the Sources button
+        // (via refreshSources() in TransparentWindowEvents.cpp)
 
         // Check if no sources are available
         //bool noSources = false;

@@ -100,22 +100,8 @@ int main() {
         // Read selected source from IPC and apply if changed
         videoWindow.setSourceFromIPC();
 
-        // Process events through the window directly
-        while (const std::optional event = videoWindow.getWindow().pollEvent()) {
-            if (event->is<sf::Event::Closed>()) {
-                videoWindow.close();
-                std::cout << "Video window closed" << std::endl;
-            }
-            else if (event->is<sf::Event::Resized>()) {
-                std::cout << "Video window resized: " << videoWindow.getSize().x << "x" << videoWindow.getSize().y << std::endl;
-            }
-            else if (event->is<sf::Event::KeyPressed>()) {
-                const auto* keyPressed = event->getIf<sf::Event::KeyPressed>();
-                if (keyPressed->scancode == sf::Keyboard::Scancode::Escape) {
-                    shouldExit = true;
-                }
-            }
-        }
+        // Process events through VideoWindow (includes play/pause handling)
+        shouldExit = !videoWindow.pollEvents();
 
         if (shouldExit) {
             videoWindow.close();

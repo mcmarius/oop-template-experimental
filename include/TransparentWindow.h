@@ -103,6 +103,9 @@ public:
     /// Reset selected source
     void resetSelectedSource();
 
+    /// Refresh sources list from IPC
+    void refreshSources();
+
     /// Scale UI elements based on window size
     void scaleUIElements(sf::Vector2u originalSize, sf::Vector2u newSize);
 

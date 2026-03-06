@@ -9,6 +9,18 @@ runs:
       if: runner.os == 'Linux'
       uses: ./.github/actions/install-linux-deps
 
+    - name: Install common macOS Dependencies
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        brew install vlc
+
+    - name: Install common Windows Dependencies
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        winget install vlc
+
     - name: More Linux Dependencies
       shell: bash
       if: runner.os == 'Linux'

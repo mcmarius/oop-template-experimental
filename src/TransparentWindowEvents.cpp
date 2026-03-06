@@ -19,6 +19,21 @@ bool TransparentWindow::pollEvents() {
             m_window.close();
             shouldExit = true;
         }
+        else if (event->is<sf::Event::KeyPressed>()) {
+            const auto* keyPressed = event->getIf<sf::Event::KeyPressed>();
+            // Send play/pause command via IPC to video process
+            if (keyPressed->code == sf::Keyboard::Key::Space ||
+                keyPressed->code == sf::Keyboard::Key::P) {
+                ipc::IPCController ipc;
+                ipc::IPCController::Config config;
+                config.overlayToVideoPath = m_config.overlayToVideoPath;
+                if (ipc.initialize(config)) {
+                    // Write play/pause command to IPC
+                    ipc.writePlayPauseCommand();
+                    std::cout << "Overlay: Play/pause command sent to video process" << std::endl;
+                }
+            }
+        }
 
         // Handle mouse click on Sources toggle button or file picker button
         if (event->is<sf::Event::MouseButtonPressed>()) {
@@ -29,9 +44,10 @@ bool TransparentWindow::pollEvents() {
                 // Convert from screen coordinates to world coordinates (accounts for view transforms)
                 sf::Vector2f mousePos = m_window.mapPixelToCoords(mousePosInt);
 
-                // Check if click is on Sources toggle button (toggles picker visibility)
+                // Check if click is on Sources toggle button (refreshes sources and toggles picker visibility)
                 sf::FloatRect sourcesToggleBounds(m_sourcesTogglebutton.getPosition(), m_sourcesTogglebutton.getSize());
                 if (sourcesToggleBounds.contains(mousePos)) {
+                    refreshSources();
                     m_sourcePickerOpen = !m_sourcePickerOpen;
                 }
 
@@ -46,6 +62,8 @@ bool TransparentWindow::pollEvents() {
                             writeSelectedSourceToIPC();
                             // Update Sources button text to show selected source
                             updateSourcesButtonText();
+                            // Close picker to force natural refresh next time it's opened
+                            m_sourcePickerOpen = false;
                             break;
                         }
                     }
@@ -81,6 +99,8 @@ bool TransparentWindow::pollEvents() {
                             ipc.writeSelectedSource(url);
                             std::cout << "Selected source written to IPC: " << url << std::endl;
                         }
+                        // Close picker to force natural refresh next time it's opened
+                        m_sourcePickerOpen = false;
                     } else {
                         std::cout << "No file selected" << std::endl;
                     }

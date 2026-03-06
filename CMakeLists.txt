@@ -6,10 +6,10 @@ set(MAIN_PROJECT_NAME "oop")
 set(MAIN_EXECUTABLE_NAME "${MAIN_PROJECT_NAME}")
 
 # Video player executable
-set(VIDEO_PLAYER_NAME "video_player")
+set(VIDEO_PLAYER_EXECUTABLE_NAME "video_player")
 
 # Overlay executable
-set(OVERLAY_NAME "overlay")
+set(OVERLAY_EXECUTABLE_NAME "overlay")
 
 
 project(${MAIN_PROJECT_NAME})
@@ -101,10 +101,10 @@ target_sources(${MAIN_EXECUTABLE_NAME}
 #)
 
 # Video player executable - separate process for video streaming
-add_executable(${VIDEO_PLAYER_NAME}
+add_executable(${VIDEO_PLAYER_EXECUTABLE_NAME}
     src/VideoPlayerMain.cpp
 )
-target_sources(${VIDEO_PLAYER_NAME}
+target_sources(${VIDEO_PLAYER_EXECUTABLE_NAME}
     PRIVATE
         src/IPCController.cpp
         src/VideoWindow.cpp
@@ -117,10 +117,10 @@ target_sources(${VIDEO_PLAYER_NAME}
 )
 
 # Overlay executable - separate process for transparent overlay
-add_executable(${OVERLAY_NAME}
+add_executable(${OVERLAY_EXECUTABLE_NAME}
     src/OverlayMain.cpp
 )
-target_sources(${OVERLAY_NAME}
+target_sources(${OVERLAY_EXECUTABLE_NAME}
     PRIVATE
         src/IPCController.cpp
         src/TransparentWindow.cpp
@@ -134,6 +134,7 @@ target_sources(${OVERLAY_NAME}
 )
 
 # Launcher executable - starts video_player and overlay as separate processes
+add_dependencies(${MAIN_EXECUTABLE_NAME} ${VIDEO_PLAYER_EXECUTABLE_NAME} ${OVERLAY_EXECUTABLE_NAME})
 
 target_include_directories(${MAIN_EXECUTABLE_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
@@ -148,7 +149,7 @@ target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE
 
 # NOTE: Add all defined targets (e.g. executables, libraries, etc. )
 # NOTE: RUN_SANITIZERS is optional, if it's not present it will default to true
-set_compiler_flags(RUN_SANITIZERS ${USE_ASAN} TARGET_NAMES ${MAIN_EXECUTABLE_NAME} ${VIDEO_PLAYER_NAME} ${OVERLAY_NAME})
+set_compiler_flags(RUN_SANITIZERS ${USE_ASAN} TARGET_NAMES ${MAIN_EXECUTABLE_NAME} ${VIDEO_PLAYER_EXECUTABLE_NAME} ${OVERLAY_EXECUTABLE_NAME})
 # set_compiler_flags(TARGET_NAMES ${MAIN_EXECUTABLE_NAME} ${FOO} ${BAR})
 # where ${FOO} and ${BAR} represent additional executables or libraries
 # you want to compile with the set compiler flags
@@ -170,29 +171,29 @@ target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE
     Threads::Threads
 )
 
-target_include_directories(${VIDEO_PLAYER_NAME} PUBLIC
+target_include_directories(${VIDEO_PLAYER_EXECUTABLE_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 )
-target_include_directories(${VIDEO_PLAYER_NAME} SYSTEM PRIVATE
+target_include_directories(${VIDEO_PLAYER_EXECUTABLE_NAME} SYSTEM PRIVATE
     ext
     ${libvlcpp_SOURCE_DIR}
 )
 
-target_link_libraries(${VIDEO_PLAYER_NAME} PRIVATE
+target_link_libraries(${VIDEO_PLAYER_EXECUTABLE_NAME} PRIVATE
     SFML::Graphics SFML::Window SFML::System
     ${LIBVLC_LIBRARY}
     Threads::Threads
 )
 
-target_include_directories(${OVERLAY_NAME} PUBLIC
+target_include_directories(${OVERLAY_EXECUTABLE_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 )
-target_include_directories(${OVERLAY_NAME} SYSTEM PRIVATE
+target_include_directories(${OVERLAY_EXECUTABLE_NAME} SYSTEM PRIVATE
     ext
     ${libvlcpp_SOURCE_DIR}
 )
 
-target_link_libraries(${OVERLAY_NAME} PRIVATE
+target_link_libraries(${OVERLAY_EXECUTABLE_NAME} PRIVATE
     SFML::Graphics SFML::Window SFML::System
     Threads::Threads
 )
@@ -200,15 +201,15 @@ target_link_libraries(${OVERLAY_NAME} PRIVATE
 if(APPLE)
 elseif(UNIX)
     target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE X11)
-    target_link_libraries(${VIDEO_PLAYER_NAME} PRIVATE X11)
-    target_link_libraries(${OVERLAY_NAME} PRIVATE X11)
+    target_link_libraries(${VIDEO_PLAYER_EXECUTABLE_NAME} PRIVATE X11)
+    target_link_libraries(${OVERLAY_EXECUTABLE_NAME} PRIVATE X11)
 endif()
 
 ###############################################################################
 
 # copy binaries to "bin" folder; these are uploaded as artifacts on each release
 # DESTINATION_DIR is set as "bin" in cmake/Options.cmake:6
-install(TARGETS ${MAIN_EXECUTABLE_NAME} ${VIDEO_PLAYER_NAME} ${OVERLAY_NAME} DESTINATION ${DESTINATION_DIR})
+install(TARGETS ${MAIN_EXECUTABLE_NAME} ${VIDEO_PLAYER_EXECUTABLE_NAME} ${OVERLAY_EXECUTABLE_NAME} DESTINATION ${DESTINATION_DIR})
 if(APPLE)
     install(FILES launcher.command DESTINATION ${DESTINATION_DIR})
 endif()

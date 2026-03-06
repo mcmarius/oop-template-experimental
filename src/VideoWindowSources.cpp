@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <chrono>
 #include <thread>
+#include <queue>
 #include "IPCController.h"
 
 namespace vlc {
@@ -42,19 +43,6 @@ std::string VideoWindow::detectCameraSource() {
 
 std::vector<ipc::StreamingSource> VideoWindow::discoverSources() {
     std::vector<ipc::StreamingSource> sources;
-
-    // First check if a source has been explicitly selected from IPC
-    std::string selectedSource = getSelectedSourceFromIPC();
-    if (!selectedSource.empty()) {
-        // Return the selected source
-        ipc::StreamingSource source;
-        // Extract just the filename for display
-        source.name = std::filesystem::path(selectedSource).filename().string();
-        source.mrl = selectedSource;
-        source.type = "file";
-        sources.push_back(source);
-        return sources;
-    }
 
     // Always check for CI mode first
     const char* ci_test_video = std::getenv("CI_TEST_VIDEO_PATH");
@@ -174,14 +162,34 @@ bool VideoWindow::setSourceFromIPC() {
     // Create new media from selected source
     try {
         std::string path = selectedSource;
-        // Strip file:// prefix if present (VLC::Media::FromPath expects a path, not a URL)
-        if (path.find("file://") == 0) {
-            path = path.substr(7);
+        
+        // Determine if the source is a file path or a stream URL
+        // Stream URLs have schemes like v4l2://, dshow://, avcapture://, rtsp://, etc.
+        // File paths either have file:// or are plain paths
+        bool isStreamUrl = false;
+        
+        // Check for common stream schemes
+        if (path.find("://") != std::string::npos) {
+            // It has a scheme - could be file://, v4l2://, dshow://, etc.
+            // Check if it's NOT a file:// URL
+            if (path.find("file://") != 0) {
+                isStreamUrl = true;
+            } else {
+                // It's a file:// URL - strip the prefix for VLC::Media::FromPath
+                path = path.substr(7);
+            }
         }
-        auto media = VLC::Media(m_instance, path, VLC::Media::FromPath);
-        // Loop the video for continuous playback
-        media.addOption(":input-repeat=65535");
+        // If no :// found, treat as plain file path
+        
+        auto media = VLC::Media(m_instance, path, isStreamUrl ? VLC::Media::FromLocation : VLC::Media::FromPath);
+        // Loop the video for continuous playback (only needed for file sources)
+        if (!isStreamUrl) {
+            media.addOption(":input-repeat=65535");
+        }
         m_mediaPlayer = VLC::MediaPlayer(media);
+
+        // Track if this is a live stream (for play/pause behavior)
+        m_isStream = isStreamUrl;
 
         // Set up VLC to render to our SFML window
         sf::WindowHandle hndl = m_window.getNativeHandle();
@@ -191,13 +199,88 @@ bool VideoWindow::setSourceFromIPC() {
         m_started = true;
         m_lastLoadedSource = selectedSource;
 
-        // Discover and write sources to IPC to update overlay's source picker
-        // Loop protection: only write if sources have actually changed
-        std::vector<ipc::StreamingSource> sources = discoverSources();
-        if (sources != m_lastWrittenSources) {
-            if (writeSourcesToIPC(sources)) {
-                m_lastWrittenSources = sources;
-                std::cout << "Updated sources in IPC: " << sources.size() << " source(s)" << std::endl;
+        // Preserve discovered sources AND add the selected file
+        // Read existing sources from IPC, append selected file if not already present
+        // Limit to last 2 file sources maximum to prevent pile-up
+        ipc::IPCController ipc;
+        ipc::IPCController::Config config;
+        config.videoToOverlayPath = m_config.videoToOverlayPath;
+        config.overlayToVideoPath = m_config.overlayToVideoPath;
+
+        if (ipc.initialize(config)) {
+            std::vector<ipc::StreamingSource> sources = ipc.readStreamingSources();
+            
+            // Check if selected source is already in sources list
+            bool found = false;
+            for (const auto& src : sources) {
+                if (src.mrl == selectedSource) {
+                    found = true;
+                    break;
+                }
+            }
+            
+            // If not found, add it as a new source
+            if (!found) {
+                ipc::StreamingSource newSource;
+                newSource.mrl = selectedSource;
+                // Extract filename for display name
+                std::string path = selectedSource;
+                if (path.find("file://") == 0) {
+                    path = path.substr(7);
+                }
+                newSource.name = std::filesystem::path(path).filename().string();
+                newSource.type = "file";
+
+                // Filter out old file sources using a queue (keep last 2)
+                std::vector<ipc::StreamingSource> nonFileSources;
+                std::queue<ipc::StreamingSource> fileQueue;
+
+                for (const auto& src : sources) {
+                    if (src.type == "file") {
+                        fileQueue.push(src);
+                    } else {
+                        nonFileSources.push_back(src);
+                    }
+                }
+
+                // Add new file to queue
+                fileQueue.push(newSource);
+
+                // Keep only last 2 file sources by removing from front
+                while (fileQueue.size() > 2) {
+                    fileQueue.pop();
+                }
+
+                // Convert queue to vector
+                std::vector<ipc::StreamingSource> fileSources;
+                while (!fileQueue.empty()) {
+                    fileSources.push_back(fileQueue.front());
+                    fileQueue.pop();
+                }
+
+                // Combine: non-file sources first, then file sources
+                sources = nonFileSources;
+                sources.insert(sources.end(), fileSources.begin(), fileSources.end());
+
+                std::cout << "Added file source to sources list: " << newSource.name << std::endl;
+                std::cout << "Total sources: " << sources.size() << " (non-file: " << nonFileSources.size() << ", file: " << fileSources.size() << ")" << std::endl;
+            }
+            
+            // Write updated sources back to IPC
+            if (sources != m_lastWrittenSources) {
+                if (writeSourcesToIPC(sources)) {
+                    m_lastWrittenSources = sources;
+                    std::cout << "Updated sources in IPC: " << sources.size() << " source(s)" << std::endl;
+                }
+            }
+        } else {
+            // Fallback: just discover and write sources (original behavior if IPC fails)
+            std::vector<ipc::StreamingSource> sources = discoverSources();
+            if (sources != m_lastWrittenSources) {
+                if (writeSourcesToIPC(sources)) {
+                    m_lastWrittenSources = sources;
+                    std::cout << "Updated sources in IPC: " << sources.size() << " source(s)" << std::endl;
+                }
             }
         }
 

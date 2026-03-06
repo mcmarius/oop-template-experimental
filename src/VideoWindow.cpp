@@ -1,5 +1,8 @@
 #include "VideoWindow.h"
 #include <iostream>
+#include <bits/this_thread_sleep.h>
+
+#include "IPCController.h"
 
 namespace vlc {
 
@@ -54,6 +57,9 @@ bool VideoWindow::pollEvents() {
 
     bool shouldExit = false;
 
+    // Check for IPC play/pause commands
+    handlePlayPauseCommandFromIPC();
+
     while (const std::optional event = m_window.pollEvent()) {
         if (event->is<sf::Event::Closed>()) {
             m_window.close();
@@ -68,6 +74,13 @@ bool VideoWindow::pollEvents() {
             const auto* keyPressed = event->getIf<sf::Event::KeyPressed>();
             if (keyPressed->scancode == sf::Keyboard::Scancode::Escape) {
                 shouldExit = true;
+            }
+            else if (keyPressed->scancode == sf::Keyboard::Scancode::Space ||
+                     keyPressed->scancode == sf::Keyboard::Scancode::P) {
+                playPause();
+                // NOTE: this is in reverse due to delay; we would have to add some sleep to get the real state
+                // from m_mediaPlayer.isPlaying
+                std::cout << "Video window: " << (m_mediaPlayer.isPlaying() ? "paused" : "playing") << std::endl;
             }
         }
     }
@@ -89,6 +102,43 @@ sf::Vector2u VideoWindow::getPosition() const {
 
 sf::Vector2u VideoWindow::getSize() const {
     return m_window.getSize();
+}
+
+void VideoWindow::playPause() {
+    if (m_mediaPlayer.isPlaying()) {
+        m_mediaPlayer.pause();
+    } else {
+        // For live streams, restart to skip buffered frames during pause
+        // For file sources, just play (frame-accurate resume)
+        if (m_isStream) {
+            std::cout << "Live stream detected - restarting to skip buffered frames" << std::endl;
+            m_mediaPlayer.stop();
+            m_mediaPlayer.play();
+        } else {
+            m_mediaPlayer.play();
+        }
+    }
+}
+
+bool VideoWindow::isPlaying() {
+    return m_mediaPlayer.isPlaying();
+}
+
+bool VideoWindow::handlePlayPauseCommandFromIPC() {
+    ipc::IPCController ipc;
+    ipc::IPCController::Config config;
+    config.overlayToVideoPath = m_config.overlayToVideoPath;
+    
+    if (ipc.initialize(config)) {
+        if (ipc.readPlayPauseCommand()) {
+            playPause();
+            // NOTE: this is in reverse due to delay; we would have to add some sleep to get the real state
+            // from m_mediaPlayer.isPlaying
+            std::cout << "Video window (IPC): " << (m_mediaPlayer.isPlaying() ? "paused" : "playing") << std::endl;
+            return true;
+        }
+    }
+    return false;
 }
 
 } // namespace vlc

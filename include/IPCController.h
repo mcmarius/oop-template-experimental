@@ -91,6 +91,19 @@ public:
     /// Returns selected MRL, empty string if none selected
     std::string readSelectedSource() const;
 
+    /// ========== Play/Pause Control (overlay_to_video.json) ==========
+
+    /// Write play/pause command to shared file
+    /// Call this from overlay process
+    bool writePlayPauseCommand() const;
+
+    /// Read and clear play/pause command from shared file
+    /// Call this from video process
+    /// Returns true if command was received and cleared
+    bool readPlayPauseCommand();
+
+    /// ========== Video → Overlay (video_to_overlay.json) ==========
+
     /// Check if video→overlay file exists and has valid video data
     bool isVideoFileReady() const;
 

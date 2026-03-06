@@ -286,6 +286,42 @@ std::string IPCController::readSelectedSource() const {
     }
 }
 
+bool IPCController::writePlayPauseCommand() const {
+    if (!m_initialized) {
+        return false;
+    }
+
+    try {
+        json j = loadJsonFile(m_config.overlayToVideoPath);
+        j["play_pause_command"] = true;
+        return saveJsonFile(m_config.overlayToVideoPath, j);
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        return false;
+    }
+}
+
+bool IPCController::readPlayPauseCommand() {
+    if (!m_initialized) {
+        return false;
+    }
+
+    try {
+        json j = loadJsonFile(m_config.overlayToVideoPath);
+
+        if (j.contains("play_pause_command") && j["play_pause_command"].is_boolean()) {
+            // Clear the command
+            j.erase("play_pause_command");
+            saveJsonFile(m_config.overlayToVideoPath, j);
+            return true;
+        }
+        return false;
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        return false;
+    }
+}
+
 bool IPCController::isVideoFileReady() const {
     if (!m_initialized) {
         return false;
