@@ -102,6 +102,23 @@ public:
     /// Returns true if command was received and cleared
     bool readPlayPauseCommand();
 
+    /// ========== Active Window Tracking (both JSON files) ==========
+
+    /// Write which window is currently active
+    /// Call this from either process when Alt+` is pressed
+    /// @param windowName Either "video" or "overlay"
+    bool writeActiveWindow(const std::string& windowName) const;
+
+    /// Read which window should be active
+    /// Call this from either process to check if this window should focus itself
+    /// @return "video" or "overlay", empty string if not set
+    std::string readActiveWindow() const;
+
+    /// Clear the active window flag (call after processing)
+    /// This resets active_window to an empty string so the window doesn't
+    /// steal focus repeatedly
+    void clearActiveWindow() const;
+
     /// ========== Video → Overlay (video_to_overlay.json) ==========
 
     /// Check if video→overlay file exists and has valid video data

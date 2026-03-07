@@ -1,1 +1,13 @@
-{}
+{
+    "active_window": "",
+    "no_sources_available": false,
+    "streaming_sources": [],
+    "video_position": {
+        "x": 0,
+        "y": 0
+    },
+    "video_size": {
+        "height": 720,
+        "width": 1280
+    }
+}

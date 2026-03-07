@@ -103,10 +103,6 @@ public:
     /// @return true if command was received and executed
     bool handlePlayPauseCommandFromIPC();
 
-    /// Set window group for Alt+` switching
-    /// @param groupLeader Handle to the leader window in the group
-    void setWindowGroup(sf::WindowHandle groupLeader);
-
 private:
     Config m_config;
     sf::RenderWindow m_window;

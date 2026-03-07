@@ -2,16 +2,28 @@
 #include <iostream>
 #include "IPCController.h"
 #include <portable-file-dialogs.h>
-#include "WindowGrouping.h"
 
 namespace transparent {
 
 bool TransparentWindow::pollEvents() {
+    // IPC for window switching
+    ipc::IPCController ipc;
+    ipc::IPCController::Config config;
+    config.overlayToVideoPath = m_config.overlayToVideoPath;
+    if (ipc.initialize(config)) {
+        // Read which window should be active
+        std::string activeWindow = ipc.readActiveWindow();
+        if (activeWindow == "overlay") {
+            m_window.requestFocus();
+            m_window.setVisible(true);
+        }
+    }
     if (!m_window.isOpen()) {
         return false;
     }
 
     bool shouldExit = false;
+
 
     while (const std::optional event = m_window.pollEvent()) {
         if (event->is<sf::Event::Closed>() ||
@@ -20,25 +32,20 @@ bool TransparentWindow::pollEvents() {
             m_window.close();
             shouldExit = true;
         }
-        // TODO: Alt+` window switching
-        // Uncomment and implement to enable window cycling:
-        // else if (event->is<sf::Event::KeyPressed>()) {
-        //     const auto* keyPressed = event->getIf<sf::Event::KeyPressed>();
-        //     // Check for Alt+` (backtick) on Linux/Windows
-        //     // Check for Cmd+` on macOS
-        //     if (keyPressed->code == sf::Keyboard::Key::BackTick &&
-        //         keyPressed->alt) {
-        //         cycleWindowFocus(m_window.getNativeHandle());
-        //     }
-        // }
         else if (event->is<sf::Event::KeyPressed>()) {
             const auto* keyPressed = event->getIf<sf::Event::KeyPressed>();
+
+            // Check for Alt+` (grave/backtick) to switch between windows
+            if (keyPressed->code == sf::Keyboard::Key::Grave) {
+                std::cout << "Overlay: Alt+` pressed, writing active_window=video" << std::endl;
+                // Write that overlay window is active
+                ipc.writeActiveWindow("video");
+                m_window.setVisible(false);
+                //m_window.setVisible(true);
+            }
             // Send play/pause command via IPC to video process
-            if (keyPressed->code == sf::Keyboard::Key::Space ||
-                keyPressed->code == sf::Keyboard::Key::P) {
-                ipc::IPCController ipc;
-                ipc::IPCController::Config config;
-                config.overlayToVideoPath = m_config.overlayToVideoPath;
+            else if (keyPressed->code == sf::Keyboard::Key::Space ||
+                     keyPressed->code == sf::Keyboard::Key::P) {
                 if (ipc.initialize(config)) {
                     // Write play/pause command to IPC
                     ipc.writePlayPauseCommand();
@@ -103,9 +110,6 @@ bool TransparentWindow::pollEvents() {
                         std::string filepath = result[0];
                         std::cout << "Selected file: " << filepath << std::endl;
                         // Write file:// URL to IPC (overlay→video path)
-                        ipc::IPCController ipc;
-                        ipc::IPCController::Config config;
-                        config.overlayToVideoPath = m_config.overlayToVideoPath;
                         if (ipc.initialize(config)) {
                             std::string url = "file://" + filepath;
                             ipc.writeSelectedSource(url);

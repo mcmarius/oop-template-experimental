@@ -4,7 +4,6 @@
 #include <vlc/vlc.h>
 
 #include "IPCController.h"
-#include "WindowGrouping.h"
 
 namespace vlc {
 
@@ -84,6 +83,18 @@ sf::WindowHandle VideoWindow::getNativeHandle() const {
 }
 
 bool VideoWindow::pollEvents() {
+    // IPC for window switching
+    ipc::IPCController ipc;
+    ipc::IPCController::Config config;
+    config.overlayToVideoPath = m_config.overlayToVideoPath;
+    if (ipc.initialize(config)) {
+        // Read which window should be active
+        std::string activeWindow = ipc.readActiveWindow();
+        if (activeWindow == "video") {
+            m_window.requestFocus();
+            m_window.setVisible(true);
+        }
+    }
     if (!m_window.isOpen()) {
         return false;
     }
@@ -92,6 +103,7 @@ bool VideoWindow::pollEvents() {
 
     // Check for IPC play/pause commands
     handlePlayPauseCommandFromIPC();
+
 
     while (const std::optional event = m_window.pollEvent()) {
         if (event->is<sf::Event::Closed>()) {
@@ -105,15 +117,15 @@ bool VideoWindow::pollEvents() {
         }
         else if (event->is<sf::Event::KeyPressed>()) {
             const auto* keyPressed = event->getIf<sf::Event::KeyPressed>();
+
             if (keyPressed->scancode == sf::Keyboard::Scancode::Escape) {
                 shouldExit = true;
             }
-            // TODO: Alt+` window switching
-            // Uncomment and implement to enable window cycling:
-            // else if (keyPressed->scancode == sf::Keyboard::Scancode::BackTick &&
-            //          keyPressed->alt) {
-            //     cycleWindowFocus(m_window.getNativeHandle());
-            // }
+            else if (keyPressed->scancode == sf::Keyboard::Scancode::Grave) {
+                // Alt+` pressed - write that video window is active
+                std::cout << "Overlay: Alt+` pressed, writing active_window=overlay" << std::endl;
+                ipc.writeActiveWindow("overlay");
+            }
             else if (keyPressed->scancode == sf::Keyboard::Scancode::Space ||
                      keyPressed->scancode == sf::Keyboard::Scancode::P) {
                 playPause();
@@ -178,10 +190,6 @@ bool VideoWindow::handlePlayPauseCommandFromIPC() {
         }
     }
     return false;
-}
-
-void VideoWindow::setWindowGroup(sf::WindowHandle groupLeader) {
-    ::setWindowGroup(m_window.getNativeHandle(), groupLeader);
 }
 
 } // namespace vlc

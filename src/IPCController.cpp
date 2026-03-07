@@ -25,11 +25,22 @@ json IPCController::loadJsonFile(const std::string& filePath) const {
     if (file.is_open()) {
         // Check if file is empty
         file.seekg(0, std::ios::end);
-        if (file.tellg() > 0) {
-            file.seekg(0, std::ios::beg);
-            file >> j;
+        std::streamsize size = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        if (size > 0) {
+            try {
+                file >> j;
+            } catch (const std::exception& e) {
+                std::cerr << "Warning: Failed to parse JSON from " << filePath << ": " << e.what() << std::endl;
+                j = json::object(); // Return empty object on parse error
+            }
+        } else {
+            j = json::object(); // Return empty object for empty files
         }
         file.close();
+    } else {
+        j = json::object(); // Return empty object if file doesn't exist
     }
     return j;
 }
@@ -322,6 +333,51 @@ bool IPCController::readPlayPauseCommand() {
     }
 }
 
+// ==================== Active Window Tracking (both JSON files) ====================
+
+bool IPCController::writeActiveWindow(const std::string& windowName) const {
+    if (!m_initialized) {
+        return false;
+    }
+
+    try {
+        // Write to overlay_to_video.json
+        {
+            json j = loadJsonFile(m_config.overlayToVideoPath);
+            j["active_window"] = windowName;
+            saveJsonFile(m_config.overlayToVideoPath, j);
+        }
+        // Write to video_to_overlay.json
+        {
+            json j = loadJsonFile(m_config.videoToOverlayPath);
+            j["active_window"] = windowName;
+            saveJsonFile(m_config.videoToOverlayPath, j);
+        }
+        return true;
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        return false;
+    }
+}
+
+std::string IPCController::readActiveWindow() const {
+    if (!m_initialized) {
+        return "";
+    }
+
+    try {
+        json j = loadJsonFile(m_config.overlayToVideoPath);
+
+        if (j.contains("active_window") && j["active_window"].is_string()) {
+            return j["active_window"].get<std::string>();
+        }
+        return "";
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        return "";
+    }
+}
+
 bool IPCController::isVideoFileReady() const {
     if (!m_initialized) {
         return false;
@@ -363,25 +419,32 @@ const std::string& IPCController::getOverlayToVideoPath() const {
 void IPCController::cleanup() const {
     if (m_initialized) {
         try {
-            // Clean up video→overlay file
+            // Clean up video→overlay file - write sensible defaults
             {
-                json j = loadJsonFile(m_config.videoToOverlayPath);
-                j.erase("video_position");
-                j.erase("video_size");
-                j.erase("streaming_sources");
-                j.erase("no_sources_available");
+                json j;
+                j["video_position"]["x"] = 0;
+                j["video_position"]["y"] = 0;
+                j["video_size"]["width"] = 1280;
+                j["video_size"]["height"] = 720;
+                j["streaming_sources"] = json::array();
+                j["no_sources_available"] = false;
+                j["active_window"] = "";
                 std::ofstream fileOut(m_config.videoToOverlayPath);
                 if (fileOut.is_open()) {
                     fileOut << j.dump(4) << std::endl;
                 }
             }
 
-            // Clean up overlay→video file
+            // Clean up overlay→video file - write sensible defaults
             {
-                json j = loadJsonFile(m_config.overlayToVideoPath);
-                j.erase("overlay_position");
-                j.erase("overlay_size");
-                j.erase("selected_source");
+                json j;
+                j["overlay_position"]["x"] = 0;
+                j["overlay_position"]["y"] = 0;
+                j["overlay_size"]["width"] = 1280;
+                j["overlay_size"]["height"] = 720;
+                j["selected_source"] = "";
+                j["play_pause_command"] = false;
+                j["active_window"] = "";
                 std::ofstream fileOut(m_config.overlayToVideoPath);
                 if (fileOut.is_open()) {
                     fileOut << j.dump(4) << std::endl;

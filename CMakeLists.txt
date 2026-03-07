@@ -142,10 +142,6 @@ add_executable(${VIDEO_PLAYER_EXECUTABLE_NAME}
 )
 set(COMMON_SOURCES
     src/IPCController.cpp
-    src/WindowGrouping.cpp
-    $<$<PLATFORM_ID:Darwin>:src/WindowGrouping_macOS.mm>
-    $<$<PLATFORM_ID:Windows>:src/WindowGrouping_Windows.cpp>
-    $<$<PLATFORM_ID:Linux>:src/WindowGrouping_Linux.cpp>
     src/Example.cpp
 )
 target_sources(${VIDEO_PLAYER_EXECUTABLE_NAME}

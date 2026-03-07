@@ -1,6 +1,5 @@
 #include "TransparentWindow.h"
 #include <iostream>
-#include "WindowGrouping.h"
 
 namespace transparent {
 
@@ -154,10 +153,6 @@ const sf::Image& TransparentWindow::getImage() const {
 
 const sf::Sprite& TransparentWindow::getSprite() const {
     return *m_sprite;
-}
-
-void TransparentWindow::setWindowGroup(sf::WindowHandle groupLeader) {
-    ::setWindowGroup(m_window.getNativeHandle(), groupLeader);
 }
 
 } // namespace transparent

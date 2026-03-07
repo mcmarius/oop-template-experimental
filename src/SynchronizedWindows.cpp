@@ -50,14 +50,6 @@ bool SynchronizedWindows::initialize(const Config& config) {
     // Sync initial position/size
     syncOverlayToVideo();
 
-    // Window grouping for Alt+` switching
-    // This allows the OS to treat video and overlay windows as a group
-    // for Alt+` (or Cmd+` on macOS) window switching
-    // Both windows must have the same _NET_WM_GROUP_ID value
-    sf::WindowHandle groupLeader = m_overlayWindow->getNativeHandle();
-    m_videoWindow->setWindowGroup(groupLeader);
-    m_overlayWindow->setWindowGroup(groupLeader);
-
     // Raise the transparent window to the top so it appears above the video window
     // This is needed because the video window was created second
     raiseWindowLinux(m_overlayWindow->getNativeHandle());
