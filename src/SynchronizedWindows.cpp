@@ -1,12 +1,8 @@
 #include "SynchronizedWindows.h"
 #include "VideoWindow.h"
 #include "TransparentWindow.h"
+#include "SynchronizedWindowsPlatform.h"
 #include <iostream>
-
-#if defined(SFML_SYSTEM_LINUX)
-    #include <X11/Xlib.h>
-    #include <X11/extensions/shape.h>
-#endif
 
 namespace syncwindows {
 
@@ -54,19 +50,17 @@ bool SynchronizedWindows::initialize(const Config& config) {
     // Sync initial position/size
     syncOverlayToVideo();
 
+    // Window grouping for Alt+` switching
+    // This allows the OS to treat video and overlay windows as a group
+    // for Alt+` (or Cmd+` on macOS) window switching
+    // Both windows must have the same _NET_WM_GROUP_ID value
+    sf::WindowHandle groupLeader = m_overlayWindow->getNativeHandle();
+    m_videoWindow->setWindowGroup(groupLeader);
+    m_overlayWindow->setWindowGroup(groupLeader);
+
     // Raise the transparent window to the top so it appears above the video window
     // This is needed because the video window was created second
-#if defined(SFML_SYSTEM_LINUX)
-    Display* display = XOpenDisplay(nullptr);
-    if (display) {
-        Window transparentWnd = static_cast<Window>(m_overlayWindow->getNativeHandle());
-        
-        // Raise the transparent window above the video window
-        XRaiseWindow(display, transparentWnd);
-        XFlush(display);
-        XCloseDisplay(display);
-    }
-#endif
+    raiseWindowLinux(m_overlayWindow->getNativeHandle());
 
     m_running = true;
     return true;
@@ -146,23 +140,7 @@ int SynchronizedWindows::run() {
 
         // If button was clicked, raise overlay to ensure it stays on top
         if (m_overlayWindow->wasButtonClicked()) {
-#if defined(SFML_SYSTEM_LINUX)
-            Display* display = XOpenDisplay(nullptr);
-            if (display) {
-                Window transparentWnd = static_cast<Window>(m_overlayWindow->getNativeHandle());
-                Window videoWnd = static_cast<Window>(m_videoWindow->getNativeHandle());
-                
-                // Raise transparent window above video window
-                XRaiseWindow(display, transparentWnd);
-                XFlush(display);
-                
-                // Also raise video window to maintain proper order, then transparent again
-                XRaiseWindow(display, videoWnd);
-                XRaiseWindow(display, transparentWnd);
-                XFlush(display);
-                XCloseDisplay(display);
-            }
-#endif
+            raiseTwoWindowsLinux(m_overlayWindow->getNativeHandle(), m_videoWindow->getNativeHandle());
             m_overlayWindow->resetButtonClicked();
         }
 

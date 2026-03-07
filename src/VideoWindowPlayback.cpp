@@ -4,27 +4,80 @@
 #include <thread>
 #include "IPCController.h"
 
+// Windows only
+std::vector<std::string> GetWindowsWebcamNames();
+
 namespace vlc {
 
 bool VideoWindow::start() {
+    std::cout << "[VideoWindow::start] Starting..." << std::endl;
     m_cameraSource = detectCameraSource();
+    std::cout << "[VideoWindow::start] Camera source: " << m_cameraSource << std::endl;
 
     // Use MediaDiscoverer for real cameras, direct media for mock (file://)
     if (m_cameraSource.find("file://") == 0) {
         // Create media directly from video file (mock camera for CI)
-        std::cout << "Using mock camera (video file) for CI testing" << std::endl;
+        std::cout << "[VideoWindow::start] Using mock camera (video file) for CI testing" << std::endl;
 
         std::string path = m_cameraSource.substr(7);
-        auto media = VLC::Media(m_instance, path, VLC::Media::FromPath);
-        // Loop the video for continuous playback
-        media.addOption(":input-repeat=65535");
-        m_mediaPlayer = VLC::MediaPlayer(media);
+        std::cout << "[VideoWindow::start] Creating Media from path: " << path << std::endl;
+        try {
+            auto media = VLC::Media(m_instance, path, VLC::Media::FromPath);
+            std::cout << "[VideoWindow::start] Media created successfully" << std::endl;
+            // Loop the video for continuous playback
+            media.addOption(":input-repeat=65535");
+            std::cout << "[VideoWindow::start] Creating MediaPlayer from Media..." << std::endl;
+            m_mediaPlayer = VLC::MediaPlayer(media);
+            std::cout << "[VideoWindow::start] MediaPlayer created successfully" << std::endl;
+        } catch (const std::exception& e) {
+            std::cerr << "[VideoWindow::start] Exception: " << e.what() << std::endl;
+            throw;
+        }
 
         m_isStream = false;
         m_sourcesAvailable = true;
     } else {
         // Live stream (camera device) - will skip frames on resume
         m_isStream = true;
+        #if defined(_WIN32) || defined(_WIN64)
+
+        auto devices = GetWindowsWebcamNames();
+
+        if (devices.empty()) {
+            std::cout << "No cameras found!" << std::endl;
+            return false;
+        }
+
+        // List them for the user
+        std::cout << "Available Devices:" << std::endl;
+        for (size_t i = 0; i < devices.size(); ++i) {
+            std::cout << i << ": " << devices[i] << std::endl;
+        }
+        int count = devices.size();
+
+        // Let's pick the first one found
+        std::string selectedDevice = devices[0];
+        std::cout << "\nOpening: " << selectedDevice << std::endl;
+        auto media = VLC::Media(m_instance, "dshow://", VLC::Media::FromLocation);
+
+        try {
+            // Crucial: Format the option correctly for the dshow module
+            // Syntax: :dshow-vdev="Device Name"
+            std::string vdevOpt = ":dshow-vdev=" + selectedDevice;
+            media.addOption(vdevOpt);
+
+        }  catch(const std::exception& err) {
+            std::cerr << "error selecting first source: " << err.what() << "\n";
+        }
+
+        // Safety check: ensure we have at least one device
+        m_sourcesAvailable = (count > 0);
+        if (count == 0) {
+            std::cerr << "No devices found. Make sure a camera is connected or set CI=1 for mock mode." << std::endl;
+            return false;
+        }
+        m_mediaPlayer = VLC::MediaPlayer(media);
+        #else
         // Create a MediaDiscoverer for video devices
         m_discoverer = VLC::MediaDiscoverer(m_instance, m_cameraSource.c_str());
 
@@ -58,11 +111,17 @@ bool VideoWindow::start() {
 
         auto item = mediaList->itemAtIndex(0);
         m_mediaPlayer = VLC::MediaPlayer(*item);
+        #endif
     }
 
     // Set up VLC to render to our SFML window
-    sf::WindowHandle hndl = m_window.getNativeHandle();
-    setupVLCRendering(hndl);
+    // On macOS, the window handle may not be immediately available, so use getValidNativeHandle()
+    sf::WindowHandle hndl = getValidNativeHandle();
+    if (hndl) {
+        setupVLCRendering(hndl);
+    } else {
+        std::cerr << "Warning: Failed to get valid window handle for VLC rendering" << std::endl;
+    }
 
     if (m_config.startPlaying) {
         m_mediaPlayer.play();

@@ -4,7 +4,12 @@
 #include <thread>
 #include <windows.h>
 #include <cstring>
+#include <climits>
 
+#ifndef PATH_MAX
+// MinGW defines it as 260, but in docs they say 255
+#define PATH_MAX 250
+#endif
 #define PATH_SEPARATOR "\\"
 #define EXECUTABLE_EXT ".exe"
 

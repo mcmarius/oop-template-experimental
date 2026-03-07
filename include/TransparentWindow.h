@@ -103,6 +103,10 @@ public:
     /// Reset selected source
     void resetSelectedSource();
 
+    /// Set window group for Alt+` switching
+    /// @param groupLeader Handle to the leader window in the group
+    void setWindowGroup(sf::WindowHandle groupLeader);
+
     /// Refresh sources list from IPC
     void refreshSources();
 

@@ -15,17 +15,22 @@ runs:
       run: |
         brew install vlc
 
+    # FIXME remove this when upgrading to windows-2025
+    - name: Install winget
+      if: runner.os == 'Windows'
+      uses: Cyberboss/install-winget@v1
+
     - name: Install common Windows Dependencies
       if: runner.os == 'Windows'
       shell: bash
       run: |
-        winget install vlc
+        winget install VideoLAN.VLC --source winget
 
     - name: More Linux Dependencies
       shell: bash
       if: runner.os == 'Linux'
       run: |
-        sudo apt-get install ninja-build xdotool \
+        sudo apt-get install ninja-build vlc libvlc-bin xdotool \
           openbox \
           libxkbcommon-x11-0 \
           libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0

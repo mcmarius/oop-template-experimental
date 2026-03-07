@@ -12,10 +12,17 @@ set(VIDEO_PLAYER_EXECUTABLE_NAME "video_player")
 set(OVERLAY_EXECUTABLE_NAME "overlay")
 
 
-project(${MAIN_PROJECT_NAME})
+project(${MAIN_PROJECT_NAME}
+    LANGUAGES CXX
+)
 # set(CMAKE_PROJECT_VERSION_MAJOR 0)
 # set(CMAKE_PROJECT_VERSION_MINOR 0)
 # set(CMAKE_PROJECT_VERSION_PATCH 1)
+
+if(APPLE)
+# Enable Objective-C++ for macOS files
+enable_language(OBJCXX)
+endif()
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -24,7 +31,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(cmake/Options.cmake)
 include(cmake/CompilerFlags.cmake)
 include(cmake/CopyHelper.cmake)
-#list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
 ###############################################################################
 
@@ -48,24 +54,48 @@ FetchContent_Declare(
     # GIT_TAG        0fa201c969e48ecc253581c5841ce73f44d42f49 # 3.0.2
 )
 
-set(VLC_VERSION "3.0.22") # Check VideoLAN site for latest 3.x
+set(VLC_VERSION "3.0.23") # Check VideoLAN site for latest 3.x
 
-FetchContent_Declare(
+if(WIN32)
+    FetchContent_Declare(
         vlc_sdk
         URL "https://get.videolan.org/vlc/${VLC_VERSION}/win64/vlc-${VLC_VERSION}-win64.7z"
-)
+    )
+endif()
 
-FetchContent_Declare(
-    libvlcpp
-    GIT_REPOSITORY https://github.com/videolan/libvlcpp.git
-    GIT_TAG        99541a172deb58278646560f94aeea0706e0294a # master @ 2026-03-05
-    GIT_SHALLOW    1  # works only with branches or tags, not with arbitrary commit hashes
-    GIT_PROGRESS   ON
-)
 
-FetchContent_MakeAvailable(SFML vlc_sdk libvlcpp)
+if(WIN32)
+    FetchContent_MakeAvailable(vlc_sdk)
 
-set(LIBVLC_INCLUDE_DIR "${vlc_sdk_SOURCE_DIR}/sdk/include")
+    # Patch libvlcpp to fix ssize_t redefinition on Windows
+    # removing an older workaround for an older build of MSVC
+    # This prevents conflict with VLC SDK's ssize_t definition
+    FetchContent_Declare(
+        libvlcpp
+        GIT_REPOSITORY https://github.com/videolan/libvlcpp.git
+        GIT_TAG        99541a172deb58278646560f94aeea0706e0294a # master @ 2026-03-05
+        GIT_SHALLOW    1  # works only with branches or tags, not with arbitrary commit hashes
+        GIT_PROGRESS   ON
+        PATCH_COMMAND git apply ${CMAKE_CURRENT_SOURCE_DIR}/cmake/patches/libvlcpp-ssize_t.patch || true
+    )
+else()
+    FetchContent_Declare(
+        libvlcpp
+        GIT_REPOSITORY https://github.com/videolan/libvlcpp.git
+        GIT_TAG        99541a172deb58278646560f94aeea0706e0294a # master @ 2026-03-05
+        GIT_SHALLOW    1  # works only with branches or tags, not with arbitrary commit hashes
+        GIT_PROGRESS   ON
+    )
+endif()
+
+FetchContent_MakeAvailable(SFML libvlcpp)
+
+if(WIN32)
+    set(LIBVLC_INCLUDE_DIR "${vlc_sdk_SOURCE_DIR}/sdk/include")
+    set(LIBVLC_LIBRARY "${vlc_sdk_SOURCE_DIR}/sdk/lib/libvlc.lib")
+    set(LIBVLCCORE_LIBRARY "${vlc_sdk_SOURCE_DIR}/sdk/lib/libvlccore.lib")
+endif()
+
 
 ###############################################################################
 
@@ -77,7 +107,10 @@ elseif(UNIX)
     find_package(X11)
 endif()
 
-#find_package(LibVLC REQUIRED)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+if(NOT WIN32)
+    find_package(LibVLC REQUIRED)
+endif()
 
 ###############################################################################
 
@@ -97,6 +130,9 @@ target_sources(${MAIN_EXECUTABLE_NAME}
 #        src/VideoWindow.cpp
 #        src/TransparentWindow.cpp
 #        src/SynchronizedWindows.cpp
+#        $<$<PLATFORM_ID:Darwin>:src/SynchronizedWindows_macOS.cpp>
+#        $<$<PLATFORM_ID:Windows>:src/SynchronizedWindows_Windows.cpp>
+#        $<$<PLATFORM_ID:Linux>:src/SynchronizedWindows_Linux.cpp>
 #        src/Example.cpp
 #)
 
@@ -104,16 +140,27 @@ target_sources(${MAIN_EXECUTABLE_NAME}
 add_executable(${VIDEO_PLAYER_EXECUTABLE_NAME}
     src/VideoPlayerMain.cpp
 )
+set(COMMON_SOURCES
+    src/IPCController.cpp
+    src/WindowGrouping.cpp
+    $<$<PLATFORM_ID:Darwin>:src/WindowGrouping_macOS.mm>
+    $<$<PLATFORM_ID:Windows>:src/WindowGrouping_Windows.cpp>
+    $<$<PLATFORM_ID:Linux>:src/WindowGrouping_Linux.cpp>
+    src/Example.cpp
+)
 target_sources(${VIDEO_PLAYER_EXECUTABLE_NAME}
     PRIVATE
-        src/IPCController.cpp
+        ${COMMON_SOURCES}
         src/VideoWindow.cpp
         src/VideoWindowPlayback.cpp
+        $<$<PLATFORM_ID:Windows>:src/VideoWindowPlayback_Windows.cpp>
         src/VideoWindowSources.cpp
         $<$<PLATFORM_ID:Darwin>:src/VideoWindow_macOS.cpp>
         $<$<PLATFORM_ID:Windows>:src/VideoWindow_Windows.cpp>
         $<$<PLATFORM_ID:Linux>:src/VideoWindow_Linux.cpp>
-        src/Example.cpp
+        $<$<PLATFORM_ID:Darwin>:src/VideoPlayerMain_macOS.cpp>
+        $<$<PLATFORM_ID:Windows>:src/VideoPlayerMain_Windows.cpp>
+        $<$<PLATFORM_ID:Linux>:src/VideoPlayerMain_Linux.cpp>
 )
 
 # Overlay executable - separate process for transparent overlay
@@ -122,30 +169,23 @@ add_executable(${OVERLAY_EXECUTABLE_NAME}
 )
 target_sources(${OVERLAY_EXECUTABLE_NAME}
     PRIVATE
-        src/IPCController.cpp
+        ${COMMON_SOURCES}
         src/TransparentWindow.cpp
-        $<$<PLATFORM_ID:Darwin>:src/TransparentWindow_macOS.cpp>
+        $<$<PLATFORM_ID:Darwin>:src/TransparentWindow_macOS.mm>
         $<$<PLATFORM_ID:Windows>:src/TransparentWindow_Windows.cpp>
         $<$<PLATFORM_ID:Linux>:src/TransparentWindow_Linux.cpp>
         src/TransparentWindowEvents.cpp
         src/TransparentWindowRendering.cpp
         src/TransparentWindowSources.cpp
-        src/Example.cpp
 )
+
+# Silence OpenGL deprecation warnings on macOS 10.14+
+if(APPLE)
+    target_compile_definitions(${OVERLAY_EXECUTABLE_NAME} PRIVATE GL_SILENCE_DEPRECATION)
+endif()
 
 # Launcher executable - starts video_player and overlay as separate processes
 add_dependencies(${MAIN_EXECUTABLE_NAME} ${VIDEO_PLAYER_EXECUTABLE_NAME} ${OVERLAY_EXECUTABLE_NAME})
-
-target_include_directories(${MAIN_EXECUTABLE_NAME} PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-)
-target_include_directories(${MAIN_EXECUTABLE_NAME} SYSTEM PRIVATE
-    ${libvlcpp_SOURCE_DIR}
-)
-target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE
-    SFML::Graphics SFML::Window SFML::System
-    Threads::Threads
-)
 
 # NOTE: Add all defined targets (e.g. executables, libraries, etc. )
 # NOTE: RUN_SANITIZERS is optional, if it's not present it will default to true
@@ -163,11 +203,12 @@ target_include_directories(${MAIN_EXECUTABLE_NAME} PUBLIC
 target_include_directories(${MAIN_EXECUTABLE_NAME} SYSTEM PRIVATE
     ext
     ${libvlcpp_SOURCE_DIR}
+    ${LIBVLC_INCLUDE_DIR}
 )
 
 target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE
     SFML::Graphics SFML::Window SFML::System
-    ${LIBVLC_LIBRARY} #${LIBVLCCORE_LIBRARY}
+    ${LIBVLC_LIBRARY} $<$<PLATFORM_ID:Windows>:${LIBVLCCORE_LIBRARY}>
     Threads::Threads
 )
 
@@ -177,11 +218,12 @@ target_include_directories(${VIDEO_PLAYER_EXECUTABLE_NAME} PUBLIC
 target_include_directories(${VIDEO_PLAYER_EXECUTABLE_NAME} SYSTEM PRIVATE
     ext
     ${libvlcpp_SOURCE_DIR}
+    ${LIBVLC_INCLUDE_DIR}
 )
 
 target_link_libraries(${VIDEO_PLAYER_EXECUTABLE_NAME} PRIVATE
     SFML::Graphics SFML::Window SFML::System
-    ${LIBVLC_LIBRARY}
+    ${LIBVLC_LIBRARY} $<$<PLATFORM_ID:Windows>:${LIBVLCCORE_LIBRARY}>
     Threads::Threads
 )
 
@@ -191,6 +233,7 @@ target_include_directories(${OVERLAY_EXECUTABLE_NAME} PUBLIC
 target_include_directories(${OVERLAY_EXECUTABLE_NAME} SYSTEM PRIVATE
     ext
     ${libvlcpp_SOURCE_DIR}
+    ${LIBVLC_INCLUDE_DIR}
 )
 
 target_link_libraries(${OVERLAY_EXECUTABLE_NAME} PRIVATE
@@ -216,3 +259,10 @@ endif()
 
 # Copy all assets needed by the application
 copy_files(FILES tastatura.txt DIRECTORY assets COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE_NAME})
+
+if(WIN32)
+    copy_files(ABS_FILES "${vlc_sdk_SOURCE_DIR}/libvlc.dll" "${vlc_sdk_SOURCE_DIR}/libvlccore.dll"
+        ABS_DIRECTORY ${vlc_sdk_SOURCE_DIR}/plugins
+        COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE_NAME}
+    )
+endif()

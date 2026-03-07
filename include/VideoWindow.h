@@ -103,6 +103,10 @@ public:
     /// @return true if command was received and executed
     bool handlePlayPauseCommandFromIPC();
 
+    /// Set window group for Alt+` switching
+    /// @param groupLeader Handle to the leader window in the group
+    void setWindowGroup(sf::WindowHandle groupLeader);
+
 private:
     Config m_config;
     sf::RenderWindow m_window;
@@ -121,6 +125,10 @@ private:
 
     /// Platform-specific VLC rendering setup
     void setupVLCRendering(sf::WindowHandle hndl);
+
+    /// Get a valid native window handle with retry (macOS-specific)
+    /// @return Valid window handle or nullptr if timeout
+    sf::WindowHandle getValidNativeHandle() const;
 
     /// Platform-specific initialization
     void initializePlatform();

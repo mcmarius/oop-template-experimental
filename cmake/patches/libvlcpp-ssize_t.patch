@@ -1,0 +1,12 @@
+--- a/vlcpp/common.hpp
++++ b/vlcpp/common.hpp
+@@ -24,9 +24,6 @@
+ #ifndef LIBVLC_CXX_COMMON_H
+ #define LIBVLC_CXX_COMMON_H
+ 
+-#ifdef _MSC_VER
+-using ssize_t = long int;
+-#endif
+ 
+ #include <vlc/vlc.h>
+ #include <vlc/libvlc_version.h>

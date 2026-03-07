@@ -1,7 +1,7 @@
 #include "IPCController.h"
 #include <fstream>
 #include <iostream>
-#include "json.hpp"
+#include <json.hpp>
 
 namespace ipc {
 

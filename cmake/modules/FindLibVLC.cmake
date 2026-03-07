@@ -37,6 +37,12 @@ FIND_PATH(LIBVLC_INCLUDE_DIR vlc/vlc.h
     #Mac OS and Contribs
     "${CMAKE_CURRENT_SOURCE_DIR}/contribs/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/contribs/include/vlc"
+    # Homebrew (Apple Silicon and Intel)
+    "/opt/homebrew/opt/vlc/lib/vlc/include"
+    "/opt/homebrew/opt/vlc/include"
+    "/usr/local/opt/vlc/lib/vlc/include"
+    "/usr/local/opt/vlc/include"
+    # App Bundle
     "/Applications/VLC.app/Contents/MacOS/include"
     "/Applications/VLC.app/Contents/MacOS/include/vlc"
     # Env
@@ -59,6 +65,9 @@ FIND_LIBRARY(LIBVLC_LIBRARY NAMES vlc libvlc
   HINTS "$ENV{LIBVLC_LIBRARY_PATH}"
   PATHS
     "$ENV{LIB_DIR}/lib"
+    # Homebrew (Apple Silicon and Intel)
+    "/opt/homebrew/opt/vlc/lib"
+    "/usr/local/opt/vlc/lib"
     #Mac OS
     "${CMAKE_CURRENT_SOURCE_DIR}/contribs/lib"
     "${CMAKE_CURRENT_SOURCE_DIR}/contribs/plugins"
@@ -73,6 +82,9 @@ FIND_LIBRARY(LIBVLCCORE_LIBRARY NAMES vlccore libvlccore
   HINTS "$ENV{LIBVLC_LIBRARY_PATH}"
   PATHS
     "$ENV{LIB_DIR}/lib"
+    # Homebrew (Apple Silicon and Intel)
+    "/opt/homebrew/opt/vlc/lib"
+    "/usr/local/opt/vlc/lib"
     #Mac OS
     "${CMAKE_CURRENT_SOURCE_DIR}/contribs/lib"
     "${CMAKE_CURRENT_SOURCE_DIR}/contribs/plugins"

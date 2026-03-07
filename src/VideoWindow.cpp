@@ -1,15 +1,44 @@
 #include "VideoWindow.h"
 #include <iostream>
-#include <bits/this_thread_sleep.h>
+#include <thread>
+#include <vlc/vlc.h>
 
 #include "IPCController.h"
+#include "WindowGrouping.h"
 
 namespace vlc {
 
+namespace {
+    VLC::Instance createInstance() {
+        std::cout << "[VideoWindow] Constructor: Creating VLC Instance (libvlc_new)..." << std::endl;
+        
+        // libvlc_new on macOS might fail because it can't find plugins.
+        // Try with no arguments first.
+        std::cout << "[VideoWindow] Constructor: Trying libvlc_new(0, nullptr)..." << std::endl;
+        libvlc_instance_t* rawInstance = libvlc_new(0, nullptr);
+        if (rawInstance == nullptr) {
+            std::cerr << "[VideoWindow] Constructor: libvlc_new returned nullptr!" << std::endl;
+            throw std::runtime_error("Failed to create VLC instance - libvlc_new returned nullptr");
+        }
+        std::cout << "[VideoWindow] Constructor: libvlc_new succeeded, wrapping..." << std::endl;
+        
+        try {
+            auto instance = VLC::Instance(rawInstance);
+            std::cout << "[VideoWindow] Constructor: VLC Instance created successfully" << std::endl;
+            return instance;
+        } catch (const std::exception& e) {
+            std::cerr << "[VideoWindow] Constructor: Exception: " << e.what() << std::endl;
+            throw;
+        }
+    }
+}
+
 VideoWindow::VideoWindow()
-    : m_instance(0, nullptr),
+    : m_instance(createInstance()),
       m_lastLoadedSource() {
+    std::cout << "[VideoWindow] Constructor: Calling initializePlatform..." << std::endl;
     initializePlatform();
+    std::cout << "[VideoWindow] Constructor: Done" << std::endl;
 }
 
 VideoWindow::~VideoWindow() {
@@ -17,15 +46,19 @@ VideoWindow::~VideoWindow() {
 }
 
 bool VideoWindow::initialize(const Config& config) {
+    std::cout << "[VideoWindow] Initialize: Starting..." << std::endl;
     m_config = config;
 
     // Create the window
+    std::cout << "[VideoWindow] Initialize: Creating SFML window..." << std::endl;
     m_window.create(sf::VideoMode(config.size), config.title, config.style);
+    std::cout << "[VideoWindow] Initialize: SFML window created" << std::endl;
 
     // Disable vsync to avoid burning GPU, set FPS limit instead
     m_window.setVerticalSyncEnabled(false);
     m_window.setFramerateLimit(60);
 
+    std::cout << "[VideoWindow] Initialize: Done" << std::endl;
     return true;
 }
 
@@ -75,6 +108,12 @@ bool VideoWindow::pollEvents() {
             if (keyPressed->scancode == sf::Keyboard::Scancode::Escape) {
                 shouldExit = true;
             }
+            // TODO: Alt+` window switching
+            // Uncomment and implement to enable window cycling:
+            // else if (keyPressed->scancode == sf::Keyboard::Scancode::BackTick &&
+            //          keyPressed->alt) {
+            //     cycleWindowFocus(m_window.getNativeHandle());
+            // }
             else if (keyPressed->scancode == sf::Keyboard::Scancode::Space ||
                      keyPressed->scancode == sf::Keyboard::Scancode::P) {
                 playPause();
@@ -139,6 +178,10 @@ bool VideoWindow::handlePlayPauseCommandFromIPC() {
         }
     }
     return false;
+}
+
+void VideoWindow::setWindowGroup(sf::WindowHandle groupLeader) {
+    ::setWindowGroup(m_window.getNativeHandle(), groupLeader);
 }
 
 } // namespace vlc

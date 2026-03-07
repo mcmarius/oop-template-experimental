@@ -2,25 +2,23 @@
 #include <fstream>
 #include <chrono>
 #include <thread>
-#include <X11/Xlib.h>
-#undef Always
-#undef None
 #include <SFML/Graphics.hpp>
 #include "IPCController.h"
 #include "VideoWindow.h"
+#include "VideoPlayerMainPlatform.h"
 
 // Video player executable - runs as separate process
 // This window ONLY displays video - no overlay drawing
 // Now includes streaming source discovery and IPC-based source selection
 
 int main() {
-    XInitThreads();
+    videoplayer::platformInit();
 
     // Create video window with IPC support
     vlc::VideoWindow videoWindow;
     vlc::VideoWindow::Config config;
     config.size = {1280, 720};
-    config.title = "Video Stream";
+    config.title = "OOP Frenzy - Video Stream";
     config.style = sf::Style::Default;
     config.startPlaying = true;
     config.videoToOverlayPath = "assets/video_to_overlay.json";
@@ -43,7 +41,7 @@ int main() {
 
     // Discover and write streaming sources to IPC
     std::vector<ipc::StreamingSource> sources = videoWindow.discoverSources();
-    
+
     // Retry writing sources to IPC with a few attempts
     bool sourcesWritten = false;
     for (int attempt = 0; attempt < 5; ++attempt) {
@@ -53,7 +51,7 @@ int main() {
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-    
+
     if (!sourcesWritten) {
         std::cerr << "Warning: Failed to write sources to IPC after multiple attempts" << std::endl;
     }

@@ -1,10 +1,14 @@
 #include "VideoWindow.h"
-#include <X11/Xlib.h>
 
 namespace vlc {
 
 void VideoWindow::initializePlatform() {
     // Windows doesn't need special initialization
+}
+
+sf::WindowHandle VideoWindow::getValidNativeHandle() const {
+    // On Windows, the window handle is immediately available after create()
+    return m_window.getNativeHandle();
 }
 
 void VideoWindow::setupVLCRendering(sf::WindowHandle hndl) {

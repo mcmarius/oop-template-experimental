@@ -23,9 +23,9 @@ void TransparentWindow::draw() {
     }
 
     // Draw selected source name indicator (when picker is closed)
-    std::string selectedName = getSelectedSourceName();
-    if (!selectedName.empty() && !m_sourcePickerOpen) {
-        sf::Text selectedText(m_buttonFont, "Selected: " + selectedName, 12);
+    std::string selectedNameTop = getSelectedSourceName();
+    if (!selectedNameTop.empty() && !m_sourcePickerOpen) {
+        sf::Text selectedText(m_buttonFont, "Selected: " + selectedNameTop, 12);
         selectedText.setFillColor(sf::Color(50, 200, 100, 255));  // Green
         selectedText.setPosition(sf::Vector2f(
             m_sourcesTogglebutton.getPosition().x + 110.0f,
@@ -61,9 +61,9 @@ void TransparentWindow::draw() {
         }
 
         // Draw selected source name indicator
-        std::string selectedName = getSelectedSourceName();
-        if (!selectedName.empty()) {
-            sf::Text selectedText(m_buttonFont, "Selected: " + selectedName, 14);
+        std::string selectedNameBottom = getSelectedSourceName();
+        if (!selectedNameBottom.empty()) {
+            sf::Text selectedText(m_buttonFont, "Selected: " + selectedNameBottom, 14);
             selectedText.setFillColor(sf::Color(50, 200, 100, 255));  // Green
             selectedText.setPosition(sf::Vector2f(
                 m_sourcePickerBackground.getPosition().x + 20.0f,

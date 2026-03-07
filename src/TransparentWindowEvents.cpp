@@ -1,7 +1,8 @@
 #include "TransparentWindow.h"
 #include <iostream>
 #include "IPCController.h"
-#include "portable-file-dialogs.h"
+#include <portable-file-dialogs.h>
+#include "WindowGrouping.h"
 
 namespace transparent {
 
@@ -19,6 +20,17 @@ bool TransparentWindow::pollEvents() {
             m_window.close();
             shouldExit = true;
         }
+        // TODO: Alt+` window switching
+        // Uncomment and implement to enable window cycling:
+        // else if (event->is<sf::Event::KeyPressed>()) {
+        //     const auto* keyPressed = event->getIf<sf::Event::KeyPressed>();
+        //     // Check for Alt+` (backtick) on Linux/Windows
+        //     // Check for Cmd+` on macOS
+        //     if (keyPressed->code == sf::Keyboard::Key::BackTick &&
+        //         keyPressed->alt) {
+        //         cycleWindowFocus(m_window.getNativeHandle());
+        //     }
+        // }
         else if (event->is<sf::Event::KeyPressed>()) {
             const auto* keyPressed = event->getIf<sf::Event::KeyPressed>();
             // Send play/pause command via IPC to video process
