@@ -195,4 +195,9 @@ The [template repository](https://github.com/mcmarius/oop-template) itself is li
 ## Resurse
 <!-- renovate: datasource=github-tags depName=SFML/SFML versioning=loose -->
 - [SFML](https://github.com/SFML/SFML/tree/3.0.2) (Zlib)
+- [libVLC](https://wiki.videolan.org/LibVLC/) (LGPLv2)
+- [libvlcpp](https://github.com/videolan/libvlcpp/tree/99541a172deb58278646560f94aeea0706e0294a) (LGPL-2.1)
+- [json](https://github.com/nlohmann/json/tree/f534f4f75e12893716ea688679aeb768bff426c4) (MIT)
+- [portable-file-dialogs](https://github.com/samhocevar/portable-file-dialogs/tree/c12ea8c9a727f5320a2b4570aee863bbede2a204) (WTFPL)
+- Migrat la SFML 3 codul din [Transparent SFML windows](https://github.com/texus/TransparentWindows) (MIT)
 - adăugați trimiteri **detaliate** către resursele externe care v-au ajutat sau pe care le-ați folosit
