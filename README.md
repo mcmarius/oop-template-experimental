@@ -98,9 +98,9 @@ O cerință nu se consideră îndeplinită dacă este realizată doar prin cod g
 
 Pentru funcționalitatea de detectare obiecte (ObjectTracker), este nevoie de fișiere YOLO download-ate separat:
 
-- **Fișiere YOLO** (model.cfg și model.weights): Download de la [AlexeyAB/darknet releases](https://github.com/AlexeyAB/darknet/releases)
-  - Exemple: `yolov4-tiny.cfg`, `yolov4-tiny.weights`, `yolov7.cfg`, `yolov7.weights`
-- **coco.names**: Fișier cu numele claselor COCO dataset (de obicei included în releases sau [aici](https://github.com/AlexeyAB/darknet/blob/master/cfg/coco.names))
+- **Fișiere YOLO** (model.cfg și model.weights): Download de la [darknet](https://codeberg.org/CCodeRun/darknet)
+  - Exemple: `yolov4-tiny.cfg`, `yolov4-tiny.weights`
+- **coco.names**: Fișier cu numele claselor COCO dataset
 
 După download, plasați fișierele în folder-ul `assets/yolo/`:
 
