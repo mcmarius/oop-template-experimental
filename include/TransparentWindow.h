@@ -112,6 +112,12 @@ public:
     /// Update Sources button text to show selected source
     void updateSourcesButtonText();
 
+    /// Draw detection bounding boxes from IPC
+    void drawDetections();
+
+    /// Set detected objects to draw on overlay
+    void setDetectedObjects(const std::vector<ipc::DetectedObject>& detections);
+
 private:
     Config m_config;
     sf::RenderWindow m_window;
@@ -137,6 +143,10 @@ private:
     // File picker button
     sf::RectangleShape m_filePickerButton;
     std::unique_ptr<sf::Text> m_filePickerButtonText;
+
+    // Detection bounding boxes
+    std::vector<ipc::DetectedObject> m_detections;
+    bool m_detectionsVisible = true;
 
     bool m_initialized = false;
 

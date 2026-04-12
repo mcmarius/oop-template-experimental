@@ -8,8 +8,11 @@
 #include <cstdint>
 #include <vector>
 
-// Include IPCController for StreamingSource definition
+// Include IPCController for StreamingSource and DetectedObject definitions
 #include "IPCController.h"
+
+// Include ObjectTracker for YOLO detection
+#include "ObjectTracker.h"
 
 namespace vlc {
 
@@ -115,6 +118,10 @@ private:
     std::string m_lastLoadedSource;  ///< Track the last source loaded from IPC to avoid reloading
     std::vector<ipc::StreamingSource> m_lastWrittenSources;  ///< Track last written sources to avoid IPC writes
     bool m_isStream = false;  ///< Track if current source is a live stream (to skip frames on resume)
+    opencv::ObjectTracker m_objectTracker;  ///< YOLO object tracker
+    bool m_detectionInitialized = false;  ///< Track if detection was initialized
+    sf::Vector2u m_lastDetectionSize;  ///< Track last detection size for rescaling
+    bool m_detectionDoneOnPause = false;  ///< Track if detection was already run on current pause
 
     /// Detect camera source based on OS
     std::string detectCameraSource();
@@ -128,6 +135,12 @@ private:
 
     /// Platform-specific initialization
     void initializePlatform();
+
+    /// Run YOLO detection on current video frame and send results to IPC
+    void runDetection();
+
+    /// Initialize YOLO detection with default model files
+    bool initializeDetection();
 };
 
 } // namespace vlc

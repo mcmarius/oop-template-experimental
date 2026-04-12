@@ -5,6 +5,9 @@
 
 #include "IPCController.h"
 
+// Include ObjectTracker for YOLO detection
+#include "ObjectTracker.h"
+
 namespace vlc {
 
 namespace {
@@ -34,7 +37,9 @@ namespace {
 
 VideoWindow::VideoWindow()
     : m_instance(createInstance()),
-      m_lastLoadedSource() {
+      m_lastLoadedSource(),
+      m_lastDetectionSize(),
+      m_detectionDoneOnPause(false) {
     std::cout << "[VideoWindow] Constructor: Calling initializePlatform..." << std::endl;
     initializePlatform();
     std::cout << "[VideoWindow] Constructor: Done" << std::endl;
@@ -104,6 +109,9 @@ bool VideoWindow::pollEvents() {
     // Check for IPC play/pause commands
     handlePlayPauseCommandFromIPC();
 
+    // Run YOLO detection on current frame (throttled to ~5 FPS)
+    runDetection();
+
 
     while (const std::optional event = m_window.pollEvent()) {
         if (event->is<sf::Event::Closed>()) {
@@ -158,6 +166,8 @@ sf::Vector2u VideoWindow::getSize() const {
 void VideoWindow::playPause() {
     if (m_mediaPlayer.isPlaying()) {
         m_mediaPlayer.pause();
+        // Reset detection flag when pausing - will run detection on next render
+        m_detectionDoneOnPause = false;
     } else {
         // For live streams, restart to skip buffered frames during pause
         // For file sources, just play (frame-accurate resume)
@@ -168,6 +178,8 @@ void VideoWindow::playPause() {
         } else {
             m_mediaPlayer.play();
         }
+        // Reset detection flag when resuming - don't run detection while playing
+        m_detectionDoneOnPause = false;
     }
 }
 

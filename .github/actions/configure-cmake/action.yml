@@ -42,6 +42,30 @@ runs:
         key: ${{ matrix.os }}-${{ matrix.cxx }}-${{ matrix.asan_name }}-ninja-cache-${{ hashFiles('CMakeLists.txt') }}
         restore-keys: ${{ matrix.os }}-${{ matrix.cxx }}-${{ matrix.asan_name }}-ninja-cache-
 
+    - name: Cache OpenCV
+      # renovate: datasource=github-tags depName=actions/cache versioning=loose
+      uses: actions/cache@v5.0.3
+      id: cache-opencv
+      if: runner.os == 'Windows'
+      with:
+        path: opencv
+        key: ${{ runner.os }}-opencv-4.10.0
+
+    - name: Download OpenCV (Windows)
+      # renovate: datasource=github-tags depName=suisei-cn/actions-download-file versioning=loose
+      uses: suisei-cn/actions-download-file@v1.6.1
+      id: download-opencv
+      if: runner.os == 'Windows' && steps.cache-opencv.outputs.cache-hit != 'true'
+      with:
+        url: "https://github.com/opencv/opencv/releases/download/4.10.0/opencv-4.10.0-windows-win32.exe"
+        target: opencv/
+
+    - name: Extract OpenCV (Windows)
+      shell: bash
+      if: runner.os == 'Windows' && steps.cache-opencv.outputs.cache-hit != 'true'
+      run: |
+        7z x opencv/opencv-4.10.0-windows-win32.exe -oopencv
+
     - name: Cache MinGW
       # renovate: datasource=github-tags depName=actions/cache versioning=loose
       uses: actions/cache@v5.0.3

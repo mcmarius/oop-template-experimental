@@ -333,6 +333,75 @@ bool IPCController::readPlayPauseCommand() {
     }
 }
 
+// ==================== Detection Data Helpers (video_to_overlay.json) ====================
+
+bool IPCController::writeDetectedObjects(const std::vector<DetectedObject>& objects) const {
+    if (!m_initialized) {
+        return false;
+    }
+
+    try {
+        json j = loadJsonFile(m_config.videoToOverlayPath);
+
+        // Clear existing detections
+        j["detected_objects"] = json::array();
+
+        // Add each detection
+        for (const auto& obj : objects) {
+            json objObj;
+            objObj["class_name"] = obj.className;
+            objObj["confidence"] = obj.confidence;
+            objObj["position"]["x"] = obj.position.x;
+            objObj["position"]["y"] = obj.position.y;
+            objObj["size"]["width"] = obj.size.x;
+            objObj["size"]["height"] = obj.size.y;
+            j["detected_objects"].push_back(objObj);
+        }
+
+        return saveJsonFile(m_config.videoToOverlayPath, j);
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        return false;
+    }
+}
+
+std::vector<DetectedObject> IPCController::readDetectedObjects() const {
+    if (!m_initialized) {
+        return {};
+    }
+
+    try {
+        json j = loadJsonFile(m_config.videoToOverlayPath);
+
+        std::vector<DetectedObject> objects;
+
+        // Check if detected_objects exists and is an array
+        if (j.contains("detected_objects") && j["detected_objects"].is_array()) {
+            for (const auto& objObj : j["detected_objects"]) {
+                if (objObj.contains("class_name") && objObj.contains("confidence")) {
+                    DetectedObject obj;
+                    obj.className = objObj["class_name"].get<std::string>();
+                    obj.confidence = objObj["confidence"].get<float>();
+                    obj.position = sf::Vector2f(
+                        objObj["position"]["x"].get<float>(),
+                        objObj["position"]["y"].get<float>()
+                    );
+                    obj.size = sf::Vector2f(
+                        objObj["size"]["width"].get<float>(),
+                        objObj["size"]["height"].get<float>()
+                    );
+                    objects.push_back(obj);
+                }
+            }
+        }
+
+        return objects;
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        return {};
+    }
+}
+
 // ==================== Active Window Tracking (both JSON files) ====================
 
 bool IPCController::writeActiveWindow(const std::string& windowName) const {

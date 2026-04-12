@@ -128,6 +128,11 @@ bool VideoWindow::start() {
     }
 
     m_started = true;
+
+    // Initialize YOLO detection after VLC is set up
+    // This ensures the window handle is available for texture capture
+    initializeDetection();
+
     return true;
 }
 

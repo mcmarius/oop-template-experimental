@@ -113,6 +113,10 @@ int main() {
         // Sources are now refreshed only when user clicks the Sources button
         // (via refreshSources() in TransparentWindowEvents.cpp)
 
+        // Read detections from IPC
+        std::vector<ipc::DetectedObject> detections = ipc.readDetectedObjects();
+        overlay.setDetectedObjects(detections);
+
         // Check if no sources are available
         //bool noSources = false;
         //if (!sources.empty()) {

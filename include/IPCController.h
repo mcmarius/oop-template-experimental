@@ -18,9 +18,23 @@ struct StreamingSource {
     std::string type;   ///< Source type (e.g., "camera", "dshow", "udev")
 };
 
+/// Represents a detected object with bounding box
+struct DetectedObject {
+    std::string className;    ///< Class name from COCO dataset
+    float confidence;         ///< Confidence score (0-1)
+    sf::Vector2f position;    ///< Top-left position of bounding box
+    sf::Vector2f size;        ///< Width and height of bounding box
+};
+
 /// Compare two StreamingSource for equality (for loop protection)
 inline bool operator==(const StreamingSource& a, const StreamingSource& b) {
     return a.name == b.name && a.mrl == b.mrl && a.type == b.type;
+}
+
+/// Compare two DetectedObject for equality (for loop protection)
+inline bool operator==(const DetectedObject& a, const DetectedObject& b) {
+    return a.className == b.className && a.confidence == b.confidence &&
+           a.position == b.position && a.size == b.size;
 }
 
 /// IPCController - Position and size synchronization between video and overlay processes
@@ -101,6 +115,17 @@ public:
     /// Call this from video process
     /// Returns true if command was received and cleared
     bool readPlayPauseCommand();
+
+    /// ========== Detection Data (video_to_overlay.json) ==========
+
+    /// Write detected objects to shared file
+    /// Call this from video process after YOLO detection
+    bool writeDetectedObjects(const std::vector<DetectedObject>& objects) const;
+
+    /// Read detected objects from shared file
+    /// Call this from overlay process to get detection results
+    /// Returns vector of detected objects
+    std::vector<DetectedObject> readDetectedObjects() const;
 
     /// ========== Active Window Tracking (both JSON files) ==========
 

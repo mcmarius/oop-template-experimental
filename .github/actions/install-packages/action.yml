@@ -13,7 +13,7 @@ runs:
       if: runner.os == 'macOS'
       shell: bash
       run: |
-        brew install vlc
+        brew install vlc opencv
 
     # FIXME remove this when upgrading to windows-2025
     - name: Install winget
@@ -25,6 +25,7 @@ runs:
       shell: bash
       run: |
         winget install VideoLAN.VLC --source winget
+        # OpenCV is installed via official binaries in the configure-cmake action
 
     - name: More Linux Dependencies
       shell: bash

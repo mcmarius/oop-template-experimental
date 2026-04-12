@@ -94,6 +94,25 @@ O cerință nu se consideră îndeplinită dacă este realizată doar prin cod g
 - [ ] tag de `git` pe commit cu **toate bifele**: de exemplu `v0.3` sau `v1.0`
 - [ ] code review #3 2 proiecte
 
+## Resurse YOLO pentru detectarea obiectelor
+
+Pentru funcționalitatea de detectare obiecte (ObjectTracker), este nevoie de fișiere YOLO download-ate separat:
+
+- **Fișiere YOLO** (model.cfg și model.weights): Download de la [AlexeyAB/darknet releases](https://github.com/AlexeyAB/darknet/releases)
+  - Exemple: `yolov4-tiny.cfg`, `yolov4-tiny.weights`, `yolov7.cfg`, `yolov7.weights`
+- **coco.names**: Fișier cu numele claselor COCO dataset (de obicei included în releases sau [aici](https://github.com/AlexeyAB/darknet/blob/master/cfg/coco.names))
+
+După download, plasați fișierele în folder-ul `assets/yolo/`:
+
+```
+assets/yolo/
+├── yolov4-tiny.cfg
+├── yolov4-tiny.weights
+├── yolov7.cfg
+├── yolov7.weights
+└── coco.names
+```
+
 ## Instrucțiuni de compilare
 
 Proiectul este configurat cu CMake.
@@ -200,4 +219,5 @@ The [template repository](https://github.com/mcmarius/oop-template) itself is li
 - [json](https://github.com/nlohmann/json/tree/f534f4f75e12893716ea688679aeb768bff426c4) (MIT)
 - [portable-file-dialogs](https://github.com/samhocevar/portable-file-dialogs/tree/c12ea8c9a727f5320a2b4570aee863bbede2a204) (WTFPL)
 - Migrat la SFML 3 codul din [Transparent SFML windows](https://github.com/texus/TransparentWindows) (MIT)
+- [YOLO object detection](https://github.com/AlexeyAB/darknet) (MIT) - pentru detectarea obiectelor
 - adăugați trimiteri **detaliate** către resursele externe care v-au ajutat sau pe care le-ați folosit

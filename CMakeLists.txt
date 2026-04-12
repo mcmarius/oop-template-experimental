@@ -112,6 +112,8 @@ if(NOT WIN32)
     find_package(LibVLC REQUIRED)
 endif()
 
+find_package(OpenCV REQUIRED)
+
 ###############################################################################
 
 # NOTE: update executable name in .github/workflows/cmake.yml:25 when changing name here
@@ -151,6 +153,8 @@ target_sources(${VIDEO_PLAYER_EXECUTABLE_NAME}
         src/VideoWindowPlayback.cpp
         $<$<PLATFORM_ID:Windows>:src/VideoWindowPlayback_Windows.cpp>
         src/VideoWindowSources.cpp
+        src/VideoWindowDetection.cpp
+        src/ObjectTracker.cpp
         $<$<PLATFORM_ID:Darwin>:src/VideoWindow_macOS.cpp>
         $<$<PLATFORM_ID:Windows>:src/VideoWindow_Windows.cpp>
         $<$<PLATFORM_ID:Linux>:src/VideoWindow_Linux.cpp>
@@ -175,6 +179,16 @@ target_sources(${OVERLAY_EXECUTABLE_NAME}
         src/TransparentWindowSources.cpp
 )
 
+# OpencvTracker executable - YOLO object detection example
+set(OPENCV_TRACKER_EXECUTABLE_NAME "opencv_tracker")
+add_executable(${OPENCV_TRACKER_EXECUTABLE_NAME}
+    src/OpencvTrackerMain.cpp
+)
+target_sources(${OPENCV_TRACKER_EXECUTABLE_NAME}
+    PRIVATE
+        src/ObjectTracker.cpp
+)
+
 # Silence OpenGL deprecation warnings on macOS 10.14+
 if(APPLE)
     target_compile_definitions(${OVERLAY_EXECUTABLE_NAME} PRIVATE GL_SILENCE_DEPRECATION)
@@ -185,7 +199,7 @@ add_dependencies(${MAIN_EXECUTABLE_NAME} ${VIDEO_PLAYER_EXECUTABLE_NAME} ${OVERL
 
 # NOTE: Add all defined targets (e.g. executables, libraries, etc. )
 # NOTE: RUN_SANITIZERS is optional, if it's not present it will default to true
-set_compiler_flags(RUN_SANITIZERS ${USE_ASAN} TARGET_NAMES ${MAIN_EXECUTABLE_NAME} ${VIDEO_PLAYER_EXECUTABLE_NAME} ${OVERLAY_EXECUTABLE_NAME})
+set_compiler_flags(RUN_SANITIZERS ${USE_ASAN} TARGET_NAMES ${MAIN_EXECUTABLE_NAME} ${VIDEO_PLAYER_EXECUTABLE_NAME} ${OVERLAY_EXECUTABLE_NAME} ${OPENCV_TRACKER_EXECUTABLE_NAME})
 # set_compiler_flags(TARGET_NAMES ${MAIN_EXECUTABLE_NAME} ${FOO} ${BAR})
 # where ${FOO} and ${BAR} represent additional executables or libraries
 # you want to compile with the set compiler flags
@@ -200,12 +214,14 @@ target_include_directories(${MAIN_EXECUTABLE_NAME} SYSTEM PRIVATE
     ext
     ${libvlcpp_SOURCE_DIR}
     ${LIBVLC_INCLUDE_DIR}
+    ${OpenCV_INCLUDE_DIRS}
 )
 
 target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE
     SFML::Graphics SFML::Window SFML::System
     ${LIBVLC_LIBRARY} $<$<PLATFORM_ID:Windows>:${LIBVLCCORE_LIBRARY}>
     Threads::Threads
+    ${OpenCV_LIBS}
 )
 
 target_include_directories(${VIDEO_PLAYER_EXECUTABLE_NAME} PUBLIC
@@ -215,12 +231,14 @@ target_include_directories(${VIDEO_PLAYER_EXECUTABLE_NAME} SYSTEM PRIVATE
     ext
     ${libvlcpp_SOURCE_DIR}
     ${LIBVLC_INCLUDE_DIR}
+    ${OpenCV_INCLUDE_DIRS}
 )
 
 target_link_libraries(${VIDEO_PLAYER_EXECUTABLE_NAME} PRIVATE
     SFML::Graphics SFML::Window SFML::System
     ${LIBVLC_LIBRARY} $<$<PLATFORM_ID:Windows>:${LIBVLCCORE_LIBRARY}>
     Threads::Threads
+    ${OpenCV_LIBS}
 )
 
 target_include_directories(${OVERLAY_EXECUTABLE_NAME} PUBLIC
@@ -230,11 +248,27 @@ target_include_directories(${OVERLAY_EXECUTABLE_NAME} SYSTEM PRIVATE
     ext
     ${libvlcpp_SOURCE_DIR}
     ${LIBVLC_INCLUDE_DIR}
+    ${OpenCV_INCLUDE_DIRS}
 )
 
 target_link_libraries(${OVERLAY_EXECUTABLE_NAME} PRIVATE
     SFML::Graphics SFML::Window SFML::System
     Threads::Threads
+    ${OpenCV_LIBS}
+)
+
+target_include_directories(${OPENCV_TRACKER_EXECUTABLE_NAME} PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+)
+target_include_directories(${OPENCV_TRACKER_EXECUTABLE_NAME} SYSTEM PRIVATE
+    ext
+    ${OpenCV_INCLUDE_DIRS}
+)
+
+target_link_libraries(${OPENCV_TRACKER_EXECUTABLE_NAME} PRIVATE
+    SFML::Graphics SFML::Window SFML::System
+    Threads::Threads
+    ${OpenCV_LIBS}
 )
 
 if(APPLE)
@@ -242,13 +276,14 @@ elseif(UNIX)
     target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE X11)
     target_link_libraries(${VIDEO_PLAYER_EXECUTABLE_NAME} PRIVATE X11)
     target_link_libraries(${OVERLAY_EXECUTABLE_NAME} PRIVATE X11)
+    target_link_libraries(${OPENCV_TRACKER_EXECUTABLE_NAME} PRIVATE X11)
 endif()
 
 ###############################################################################
 
 # copy binaries to "bin" folder; these are uploaded as artifacts on each release
 # DESTINATION_DIR is set as "bin" in cmake/Options.cmake:6
-install(TARGETS ${MAIN_EXECUTABLE_NAME} ${VIDEO_PLAYER_EXECUTABLE_NAME} ${OVERLAY_EXECUTABLE_NAME} DESTINATION ${DESTINATION_DIR})
+install(TARGETS ${MAIN_EXECUTABLE_NAME} ${VIDEO_PLAYER_EXECUTABLE_NAME} ${OVERLAY_EXECUTABLE_NAME} ${OPENCV_TRACKER_EXECUTABLE_NAME} DESTINATION ${DESTINATION_DIR})
 if(APPLE)
     install(FILES launcher.command DESTINATION ${DESTINATION_DIR})
 endif()

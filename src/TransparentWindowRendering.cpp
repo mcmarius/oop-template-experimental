@@ -3,6 +3,39 @@
 
 namespace transparent {
 
+void TransparentWindow::drawDetections() {
+    // Draw detection bounding boxes on top of everything
+    if (!m_detectionsVisible || m_detections.empty()) {
+        return;
+    }
+
+    sf::RectangleShape boxShape;
+    boxShape.setFillColor(sf::Color::Transparent);
+    boxShape.setOutlineColor(sf::Color::Red);
+    boxShape.setOutlineThickness(2);
+
+    for (const auto& obj : m_detections) {
+        // Draw bounding box
+        boxShape.setSize(obj.size);
+        boxShape.setPosition(obj.position);
+        m_window.draw(boxShape);
+
+        // Draw label with class name and confidence
+        std::string label = obj.className + " " + std::to_string(static_cast<int>(obj.confidence * 100)) + "%";
+        sf::Text text(m_buttonFont, sf::String::fromUtf8(label.begin(), label.end()), 16u);
+        text.setFillColor(sf::Color::White);
+        text.setOutlineColor(sf::Color::Black);
+        text.setOutlineThickness(1);
+        text.setPosition(sf::Vector2f(obj.position.x, obj.position.y - 25));
+
+        m_window.draw(text);
+    }
+}
+
+void TransparentWindow::setDetectedObjects(const std::vector<ipc::DetectedObject>& detections) {
+    m_detections = detections;
+}
+
 void TransparentWindow::draw() {
     if (!m_window.isOpen() || !m_initialized) {
         return;
@@ -72,6 +105,9 @@ void TransparentWindow::draw() {
             m_window.draw(selectedText);
         }
     }
+
+    // Draw detection bounding boxes from IPC
+    drawDetections();
 
     m_window.display();
 }

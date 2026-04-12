@@ -37,6 +37,7 @@ LINUX_DEPS=(
     libxi-dev
     xorg
     libvlc-dev
+    libopencv-dev
 )
 
 # ---------- 3. Map logical names → real package names ----------
@@ -55,6 +56,7 @@ declare -A DEB_MAP=(
     [libxi-dev]=libxi-dev
     [xorg]=xorg
     [libvlc-dev]=libvlc-dev
+    [libopencv-dev]=libopencv-dev
 )
 
 declare -A RPM_MAP=(
@@ -72,6 +74,7 @@ declare -A RPM_MAP=(
     [libxi-dev]=libXi-devel
     [xorg]=xorg-x11-server-Xorg           # meta‑package that pulls the whole X server stack
     [libvlc-dev]=libvlc-devel
+    [libopencv-dev]=opencv-devel
 )
 
 declare -A SUSE_MAP=(
@@ -89,6 +92,7 @@ declare -A SUSE_MAP=(
     [libxi-dev]=libXi-devel
     [xorg]=xorg-x11-server
     [libvlc-dev]=libvlc-devel
+    [libopencv-dev]=opencv-devel
 )
 
 declare -A ARCH_MAP=(
@@ -106,6 +110,7 @@ declare -A ARCH_MAP=(
     [libxi-dev]=libxi
     [xorg]=xorg-x11-server
     [libvlc-dev]=libvlc
+    [libopencv-dev]=opencv
 )
 
 # ---------- 4. Build the final package list for the detected OS ----------
