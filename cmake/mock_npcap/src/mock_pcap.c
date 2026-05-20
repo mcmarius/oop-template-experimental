@@ -10,6 +10,52 @@
 /* <time.h> intentionally omitted — MinGW's _timeval.h redefines struct timeval
    which was already defined by our mock pcap.h. No stub function needs time() */
 
+/* --- Fake pcap_t struct for mock mode ---
+ * PcapPlusPlus (and libpcap) use opaque pointers that are actually allocated
+ * structs. We must allocate real memory for them so that calls like
+ * pcap_geterr(p) don't dereference garbage addresses (which causes segfaults
+ * on CI Windows with MSVC). */
+struct pcap {
+    int error_code;
+    char errbuf[PCAP_ERRBUF_SIZE];
+};
+
+/* Track allocated fake descriptors for pcap_close / pcap_freealldevs */
+static pcap_t *g_fake_descriptors[64];
+static int g_num_fakes = 0;
+static int g_next_fake_id = 1;
+
+/* Helper: allocate a fake pcap_t with an initial error code */
+static pcap_t *alloc_fake_pcap(int error_code) {
+    if (g_num_fakes >= (int)(sizeof(g_fake_descriptors) / sizeof(g_fake_descriptors[0])))
+        return NULL;
+    pcap_t *p = (pcap_t *)calloc(1, sizeof(pcap_t));
+    if (!p) return NULL;
+    p->error_code = error_code;
+    p->errbuf[0] = '\0';
+    g_fake_descriptors[g_num_fakes++] = p;
+    return p;
+}
+
+/* Helper: find index of a fake descriptor, -1 if not found */
+static int find_fake_idx(pcap_t *p) {
+    for (int i = 0; i < g_num_fakes; i++)
+        if (g_fake_descriptors[i] == p) return i;
+    return -1;
+}
+
+/* Helper: free a fake descriptor from the tracked list */
+static void free_fake_pcap(pcap_t *p) {
+    int idx = find_fake_idx(p);
+    if (idx >= 0) {
+        free(p);
+        /* Shift remaining entries */
+        for (int i = idx; i < g_num_fakes - 1; i++)
+            g_fake_descriptors[i] = g_fake_descriptors[i + 1];
+        g_num_fakes--;
+    }
+}
+
 /* --- Stub implementations --- */
 
 const char *pcap_lookupdev(char *errbuf) {
@@ -30,12 +76,13 @@ pcap_t *pcap_open(const char *device, int snaplen, int flags, int read_timeout,
 }
 
 pcap_t *pcap_open_dead(int linktype, int snaplen) {
-    return (pcap_t *)0x1;
+    return alloc_fake_pcap(0);
 }
 
 pcap_t *pcap_open_dead_with_tstamp_precision(int linktype, int snaplen,
                                               unsigned int tstamp_precision) {
-    return (pcap_t *)0x2;
+    (void)tstamp_precision;
+    return alloc_fake_pcap(0);
 }
 
 pcap_t *pcap_open_offline_with_tstamp_precision(const char *fname, char *errbuf,
@@ -51,30 +98,61 @@ pcap_t *pcap_create(const char *device, char *errbuf) {
 
 int pcap_activate(pcap_t *p) { return 0; }
 
-int pcap_close(pcap_t *p) { return 0; }
+int pcap_close(pcap_t *p) {
+    free_fake_pcap(p);
+    return 0;
+}
 
 int pcap_loop(pcap_t *p, int cnt, pcap_handler callback, u_char *user) { return 0; }
 
 int pcap_dispatch(pcap_t *p, int cnt, pcap_handler callback, u_char *user) { return 0; }
 
-int pcap_next(pcap_t *p, struct pcap_pkthdr *h) { return -1; }
+int pcap_next(pcap_t *p, struct pcap_pkthdr *h) {
+    (void)p;
+    (void)h;
+    return -1;
+}
 
-int pcap_sendpacket(pcap_t *p, const u_char *buf, int size) { return 0; }
+int pcap_sendpacket(pcap_t *p, const u_char *buf, int size) {
+    (void)p;
+    (void)buf;
+    (void)size;
+    return 0;
+}
 
-int pcap_stats(pcap_t *p, struct pcap_stat *stat) { return -1; }
+int pcap_stats(pcap_t *p, struct pcap_stat *stat) {
+    (void)p;
+    if (stat) { memset(stat, 0, sizeof(*stat)); return -1; }
+    return -1;
+}
 
-int pcap_stats_ex(pcap_t *p, struct pcap_stat *stat) { return -1; }
+int pcap_stats_ex(pcap_t *p, struct pcap_stat *stat) {
+    (void)p;
+    (void)stat;
+    return -1;
+}
 
-void pcap_breakloop(pcap_t *p) {}
+void pcap_breakloop(pcap_t *p) { (void)p; }
 
-int pcap_setfilter(pcap_t *p, struct bpf_program *fp) { return -1; }
+int pcap_setfilter(pcap_t *p, struct bpf_program *fp) {
+    (void)p;
+    (void)fp;
+    return -1;
+}
 
-int pcap_setdirection(pcap_t *p, enum pcap_direction d) { return 0; }
+int pcap_setdirection(pcap_t *p, enum pcap_direction d) {
+    (void)p;
+    (void)d;
+    return 0;
+}
 
-int pcap_geterr(pcap_t *p) { return -1; }
+int pcap_geterr(pcap_t *p) {
+    if (!p) return -1;
+    return p->error_code;
+}
 
 void pcap_perror(pcap_t *p, const char *prefix) {
-    fprintf(stderr, "%s: Mock pcap error\n", prefix);
+    fprintf(stderr, "%s: Mock pcap error\n", prefix ? prefix : "pcap");
 }
 
 char *pcap_strerror(int error) {
@@ -87,15 +165,28 @@ const char *pcap_lib_version(void) {
 
 int pcap_compile(pcap_t *p, struct bpf_program *fp, const char *str, int optimize,
                  bpf_u_int32 netmask) {
+    (void)p;
+    (void)fp;
+    (void)str;
+    (void)optimize;
+    (void)netmask;
     return -1;
 }
 
 int pcap_compile_nopcap(int snaplen_arg, int linktype_arg, struct bpf_program *fp,
                         const char *str, int optimize, bpf_u_int32 mask) {
+    (void)snaplen_arg;
+    (void)linktype_arg;
+    (void)fp;
+    (void)str;
+    (void)optimize;
+    (void)mask;
     return -1;
 }
 
-void pcap_freecode(struct bpf_program *fp) {}
+void pcap_freecode(struct bpf_program *fp) {
+    (void)fp;
+}
 
 int pcap_offline_filter(const struct bpf_program *fp, const struct pcap_pkthdr *header,
                         const u_char *dp) {
@@ -150,9 +241,15 @@ int pcap_findalldevs(pcap_if_t **alldevs, char *errbuf) {
     return 0;
 }
 
-void pcap_freealldevs(pcap_if_t *alldevs) {}
+void pcap_freealldevs(pcap_if_t *alldevs) {
+    /* The real pcap_freealldevs frees each node and its name/description
+       strings. Our mock doesn't allocate any, so no-op is fine. */
+    (void)alldevs;
+}
 
 pcap_dumper_t *pcap_dump_open(pcap_t *p, const char *file) {
+    (void)p;
+    (void)file;
     return NULL;
 }
 
