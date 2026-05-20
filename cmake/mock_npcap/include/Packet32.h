@@ -31,10 +31,10 @@ struct bpf_stat {
     int bs_drop;
 };
 
-/* Mock types */
-typedef struct _ADAPTER{} ADAPTER, *LPADAPTER;
-typedef struct _PACKET{} PACKET, *LPPACKET;
-typedef struct _PACKET_OID_DATA{} PACKET_OID_DATA, *LPPACKET_OID_DATA;
+/* Mock types — non-empty structs (C requires at least one member) */
+typedef struct _ADAPTER { int _opaque; } ADAPTER, *LPADAPTER;
+typedef struct _PACKET { int _opaque; } PACKET, *LPPACKET;
+typedef struct _PACKET_OID_DATA { int _opaque; } PACKET_OID_DATA, *LPPACKET_OID_DATA;
 
 /* Mock functions */
 LPADAPTER PacketOpenAdapter(char *AdapterName);

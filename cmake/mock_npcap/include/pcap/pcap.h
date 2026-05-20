@@ -26,13 +26,17 @@ typedef unsigned int u_int;
 #define PCAP_ERRBUF_SIZE 256
 #define DLT_EN10MB 1
 
-/* Guard against redefinition — MinGW/Windows SDK already provide this */
+/* Guard against redefinition — MinGW/Windows SDK already provide this.
+   MinGW-w64's _timeval.h uses __timeval_h, winsock2 uses _WINSOCK2_H,
+   and sys/time.h uses _SYS_TIME_H / __SYS_TIME_H. */
 #ifndef HAVE_STRUCT_TIMEVAL
+#if !defined(__timeval_h) && !defined(_SYS_TIME_H) && !defined(__SYS_TIME_H) && !defined(_WINSOCK2_H)
 struct timeval {
     long tv_sec;
     long tv_usec;
 };
 #define HAVE_STRUCT_TIMEVAL
+#endif
 #endif
 
 struct pcap_pkthdr {
