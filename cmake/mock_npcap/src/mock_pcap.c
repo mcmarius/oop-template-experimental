@@ -194,9 +194,10 @@ int pcap_set_nonblock(pcap_t *p, int nonblock, char *errbuf) { return 0; }
 /* --- Additional stubs required by PcapPlusPlus on Windows --- */
 
 pcap_t *pcap_open_offline(const char *fname, char *errbuf) {
+    fprintf(stderr, "[MOCK] pcap_open_offline(%s) -> returning NULL (not implemented)\n",
+            fname ? fname : "NULL");
     if (errbuf) snprintf(errbuf, PCAP_ERRBUF_SIZE, "Mock: pcap_open_offline not implemented");
-    /* Return a non-NULL handle so Pcap++ can call open() without NULL deref */
-    return (pcap_t *)0x3;
+    return NULL;
 }
 
 int pcap_setmintocopy(pcap_t *p, int size) {
