@@ -57,6 +57,7 @@ if(UNIX)
     target_compile_options(memplumber INTERFACE -Wno-pedantic -Wno-c++98-compat)
     #endif()
 else()
+    set(CMAKE_TLS_VERIFY OFF)
     # Windows: use pre-built PcapPlusPlus binaries
     if(MINGW)
         set(PCPP_URL "https://github.com/seladb/PcapPlusPlus/releases/download/v25.05/pcapplusplus-25.05-windows-mingw64-x86_64-gcc-15.1.0.zip")
