@@ -8,12 +8,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Stub types */
-typedef struct light_file light_file_t;
-typedef struct light_block light_block_t;
-typedef struct light_option light_option_t;
-typedef struct light_compression_context light_compression_context_t;
-typedef struct light_file_info light_file_info_t;
+/* Stub types — complete structs so sizeof() works */
+typedef struct light_file { } light_file_t;
+typedef struct light_block { } light_block_t;
+typedef struct light_option { } light_option_t;
+typedef struct light_compression_context { } light_compression_context_t;
+typedef struct light_file_info { } light_file_info_t;
 
 /* --- Stub implementations --- */
 

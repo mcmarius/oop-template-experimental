@@ -6,9 +6,30 @@
 #ifndef PACKET32_H
 #define PACKET32_H
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Basic Windows types (not available from Windows SDK in mock builds) */
+typedef unsigned long  ULONG;
+typedef unsigned short UINT;
+typedef unsigned char  BOOL;
+typedef uint16_t       WORD;
+typedef WORD          *PWORD;
+#define TRUE   1
+#define FALSE  0
+
+/* bpf_program and bpf_stat stubs (real ones are from pcap/pcap.h) */
+struct bpf_program {
+    int bf_len;
+    /* bf_insns is a pointer in real pcap — avoid defining the struct content */
+};
+struct bpf_stat {
+    int bs_recv;
+    int bs_drop;
+};
 
 /* Mock types */
 typedef struct _ADAPTER{} ADAPTER, *LPADAPTER;
