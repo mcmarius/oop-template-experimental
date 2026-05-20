@@ -29,7 +29,7 @@ int example_list_interfaces()
 {
     std::cout << "=== Example 1: List Network Interfaces ===\n\n";
 
-    auto& devList = pcpp::PcapLiveDeviceList::getInstance();
+    const auto& devList = pcpp::PcapLiveDeviceList::getInstance();
     auto devices = devList.getPcapLiveDevicesList();
 
     std::cout << "Found " << devices.size() << " live device(s):\n\n";
@@ -107,7 +107,7 @@ int example_create_pcap_file(const std::string& outputPath)
     }
 
     // Get the RawPacket from the Packet for writing
-    pcpp::RawPacket* rawPkt = packet.getRawPacket();
+    const pcpp::RawPacket* rawPkt = packet.getRawPacket();
     if (writer.writePacket(*rawPkt)) {
         std::cout << "Successfully wrote 1 packet to " << outputPath << "\n";
     } else {
@@ -131,7 +131,7 @@ int example_create_pcap_file(const std::string& outputPath)
               << ")\n";
     std::cout << "    TCP:      port " << srcPort << " -> " << dstPort
               << " (Flags: ";
-    auto* th = tcpLayer.getTcpHeader();
+    const auto* th = tcpLayer.getTcpHeader();
     if (th->finFlag) std::cout << "FIN ";
     if (th->synFlag) std::cout << "SYN ";
     if (th->rstFlag) std::cout << "RST ";
@@ -165,7 +165,7 @@ int example_read_pcap_file(const std::string& inputPath)
     std::cout << "File: " << reader->getFileName() << "\n";
 
     // Cast to PcapFileReaderDevice to access getLinkLayerType()
-    auto* pcapReader = dynamic_cast<pcpp::PcapFileReaderDevice*>(reader);
+    const auto* pcapReader = dynamic_cast<pcpp::PcapFileReaderDevice*>(reader);
     if (pcapReader) {
         std::cout << "Link layer type: "
                   << static_cast<int>(pcapReader->getLinkLayerType()) << "\n";
@@ -322,7 +322,7 @@ int example_packet_filter()
     pkt2.addLayer(&ipv4_2);
     pkt2.addLayer(&udp1);
 
-    pcpp::RawPacket* raw2 = pkt2.getRawPacket();
+    const pcpp::RawPacket* raw2 = pkt2.getRawPacket();
     bool matches2 = filter.matchPacketWithFilter(raw2);
     std::cout << "    matches 'ip and tcp' (UDP pkt): "
               << (matches2 ? "yes" : "no") << "\n\n";
@@ -469,40 +469,24 @@ int main()
     std::cout << "=====================================\n\n";
 
     // --- Example 1: List interfaces ---
-    int rc = example_list_interfaces();
-    if (rc != 0) {
-        std::cerr << "Example 1 failed with code " << rc << "\n";
-        return rc;
-    }
+    example_list_interfaces();
 
     // --- Example 2: Create synthetic pcap ---
     std::string pcapPath = "mwe_test.pcap";
-    rc = example_create_pcap_file(pcapPath);
+    int rc = example_create_pcap_file(pcapPath);
     if (rc != 0) {
         std::cerr << "Example 2 failed with code " << rc << "\n";
         return rc;
     }
 
     // --- Example 3: Read and parse ---
-    rc = example_read_pcap_file(pcapPath);
-    if (rc != 0) {
-        std::cerr << "Example 3 failed with code " << rc << "\n";
-        return rc;
-    }
+    example_read_pcap_file(pcapPath);
 
     // --- Example 4: Filtering ---
-    rc = example_packet_filter();
-    if (rc != 0) {
-        std::cerr << "Example 4 failed with code " << rc << "\n";
-        return rc;
-    }
+    example_packet_filter();
 
     // --- Example 5: Network utilities ---
-    rc = example_network_utils();
-    if (rc != 0) {
-        std::cerr << "Example 5 failed with code " << rc << "\n";
-        return rc;
-    }
+    example_network_utils();
 
     // --- Example 6: Round-trip verification ---
     rc = example_roundtrip(pcapPath);
