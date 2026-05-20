@@ -222,21 +222,6 @@ endif()
 
 # Apply platform-specific linkage
 if(WIN32)
-    target_include_directories(${PROJECT_NAME} PRIVATE ${WINDIVERT_INCLUDE_DIR})
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${WINDIVERT_LIB})
-    
-    # --- CRITICAL WINDOWS CI AUTOMATION STEP ---
-    # Automatically copy WinDivert.dll and WinDivert64.sys to your build folder 
-    # so your tests can run seamlessly without throwing runtime missing-dll errors.
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${WINDIVERT_BIN_DIR}/WinDivert.dll"
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/WinDivert.dll"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${WINDIVERT_BIN_DIR}/WinDivert64.sys"
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/WinDivert64.sys"
-        COMMENT "Deploying WinDivert drivers to output directory for local execution"
-    )
 else()
     target_link_libraries(${PROJECT_NAME} PRIVATE ${PCAP_LIBRARY})
 endif()

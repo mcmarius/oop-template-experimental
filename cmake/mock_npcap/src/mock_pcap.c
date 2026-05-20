@@ -7,7 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
+/* <time.h> intentionally omitted — MinGW's _timeval.h redefines struct timeval
+   which was already defined by our mock pcap.h. No stub function needs time() */
 
 /* --- Stub implementations --- */
 
