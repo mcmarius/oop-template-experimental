@@ -47,21 +47,14 @@ if(UNIX)
 
     FetchContent_MakeAvailable(PcapPlusPlus)
 
-    # PcapPlusPlus uses flexible array members (ISO C++ forbids them) which
-    # -pedantic -Werror treats as a hard error on GCC. Suppress only for the
-    # PcapPlusPlus library sources themselves so our code keeps strict warnings.
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        target_compile_options(Packet++ PRIVATE -Wno-c++98-compat)
-        target_compile_options(Pcap++ PRIVATE -Wno-c++98-compat)
-        target_compile_options(Common++ PRIVATE -Wno-c++98-compat)
-        target_compile_options(memplumber PRIVATE -Wno-c++98-compat)
-    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
-        # Clang uses -Wc++98-compat for the same issue
-        target_compile_options(Packet++ PRIVATE -Wno-c++98-compat)
-        target_compile_options(Pcap++ PRIVATE -Wno-c++98-compat)
-        target_compile_options(Common++ PRIVATE -Wno-c++98-compat)
-        target_compile_options(memplumber PRIVATE -Wno-c++98-compat)
-    endif()
+    # PcapPlusPlus uses flexible-array-member constructs that trigger
+    # -pedantic errors with -Werror.  Propagate a suppression on the
+    # INTERFACE so any user code that includes PcapPlusPlus headers is
+    # covered, while our own code still gets full warnings.
+    target_compile_options(Common++  INTERFACE -Wno-pedantic -Wno-c++98-compat)
+    target_compile_options(Packet++  INTERFACE -Wno-pedantic -Wno-c++98-compat)
+    target_compile_options(Pcap++    INTERFACE -Wno-pedantic -Wno-c++98-compat)
+    target_compile_options(memplumber INTERFACE -Wno-pedantic -Wno-c++98-compat)
     #endif()
 else()
     # Windows: use pre-built PcapPlusPlus binaries

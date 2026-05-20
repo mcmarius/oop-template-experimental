@@ -7,23 +7,7 @@
 #include <iomanip>
 #include "include/Example.h"
 
-// PcapPlusPlus headers — suppress flexible-array-member warnings from
-// their own source; our code keeps strict -pedantic -Werror.
-// GCC 12+ has -Wc++98-compat; older GCC falls back to -Wpedantic.
-#if defined(__clang__)
-#if __has_warning("-Wpedantic")
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wpedantic"
-#endif
-#elif defined(__GNUC__)
-#if __GNUC__ >= 12
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wc++98-compat"
-#else
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#endif
-#endif
+// PcapPlusPlus headers
 #include "PcapLiveDeviceList.h"
 #include "PcapLiveDevice.h"
 #include "PcapFileDevice.h"
@@ -37,13 +21,6 @@
 #include "PcapFilter.h"
 #include "NetworkUtils.h"
 #include "MacAddress.h"
-#if defined(__clang__)
-#if __has_warning("-Wpedantic")
-#pragma clang diagnostic pop
-#endif
-#elif defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
 
 // ============================================================================
 // Example 1: List all network interfaces
