@@ -153,32 +153,6 @@ int example_create_pcap_file(const std::string& outputPath)
 
     writer.close();
 
-    // Print packet info
-    std::cout << "  Packet details:\n";
-    std::cout << "    Ethernet: " << srcMac << " -> " << dstMac
-              << " (EtherType: 0x" << std::hex
-              << ethLayer.getEthHeader()->etherType << ")\n";
-    std::cout << "    IPv4:     " << srcIp << " -> " << dstIp
-              << " (TTL: " << std::dec
-              << static_cast<int>(ipv4Layer.getIPv4Header()->timeToLive)
-              << ", Protocol: "
-              << static_cast<int>(ipv4Layer.getIPv4Header()->protocol)
-              << ")\n";
-    std::cout << "    TCP:      port " << srcPort << " -> " << dstPort
-              << " (Flags: ";
-    const auto* th = tcpLayer.getTcpHeader();
-    if (th->finFlag) std::cout << "FIN ";
-    if (th->synFlag) std::cout << "SYN ";
-    if (th->rstFlag) std::cout << "RST ";
-    if (th->pshFlag) std::cout << "PSH ";
-    if (th->ackFlag) std::cout << "ACK ";
-    if (th->urgFlag) std::cout << "URG ";
-    std::cout << ")\n";
-    std::cout << "    Payload:  " << httpGet.size() << " bytes (" << httpGet
-              << ")\n";
-    std::cout << "    Total packet size: " << rawPkt->getRawDataLen()
-              << " bytes\n\n";
-
     return 0;
 }
 
