@@ -126,7 +126,7 @@ int pcap_datalink_val_to_name(int dlt);
 const char *pcap_datalink_val_to_description(int dlt);
 int pcap_createsrcstr(char *str, int size, const char *source, const char *port, const char *name, int type, char *errbuf);
 int pcap_parsesrcstr(const char *str, int *type, char *device, char *subnet, char *netmask, char *port, char *errbuf);
-pcap_t *pcap_findalldevs_ex(const char *source, struct pcap_rmtauth *auth, pcap_if_t **alldevs, char *errbuf);
+int pcap_findalldevs_ex(const char *source, struct pcap_rmtauth *auth, pcap_if_t **alldevs, char *errbuf);
 int pcap_findalldevs(pcap_if_t **alldevs, char *errbuf);
 void pcap_freealldevs(pcap_if_t *alldevs);
 
