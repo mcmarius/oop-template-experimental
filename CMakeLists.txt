@@ -46,6 +46,22 @@ if(UNIX)
     set(PCAPPP_BUILD_TUTORIALS OFF CACHE INTERNAL "")
 
     FetchContent_MakeAvailable(PcapPlusPlus)
+
+    # PcapPlusPlus uses flexible array members (ISO C++ forbids them) which
+    # -pedantic -Werror treats as a hard error on GCC. Suppress only for the
+    # PcapPlusPlus library sources themselves so our code keeps strict warnings.
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(Packet++ PRIVATE -Wno-c++98-compat)
+        target_compile_options(Pcap++ PRIVATE -Wno-c++98-compat)
+        target_compile_options(Common++ PRIVATE -Wno-c++98-compat)
+        target_compile_options(memplumber PRIVATE -Wno-c++98-compat)
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+        # Clang uses -Wc++98-compat for the same issue
+        target_compile_options(Packet++ PRIVATE -Wno-c++98-compat)
+        target_compile_options(Pcap++ PRIVATE -Wno-c++98-compat)
+        target_compile_options(Common++ PRIVATE -Wno-c++98-compat)
+        target_compile_options(memplumber PRIVATE -Wno-c++98-compat)
+    endif()
     #endif()
 else()
     # Windows: use pre-built PcapPlusPlus binaries
