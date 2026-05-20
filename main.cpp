@@ -305,7 +305,7 @@ int example_packet_filter()
     pkt1.addLayer(&tcp1);
     ipv4_1.computeCalculateFields();
 
-    pcpp::RawPacket* raw1 = pkt1.getRawPacket();
+    const pcpp::RawPacket* raw1 = pkt1.getRawPacket();
     bool matches1 = filter.matchPacketWithFilter(raw1);
     std::cout << "    matches 'ip and tcp' (TCP pkt): "
               << (matches1 ? "yes" : "no") << "\n";
