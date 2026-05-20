@@ -170,6 +170,10 @@ FILE *pcap_file(pcap_t *p);
 int pcap_get_nonblock(pcap_t *p, int *nonblock);
 int pcap_set_nonblock(pcap_t *p, int nonblock, char *errbuf);
 
+/* Windows-specific / additional functions needed by PcapPlusPlus */
+pcap_t *pcap_open_offline(const char *fname, char *errbuf);
+int pcap_setmintocopy(pcap_t *p, int size);
+
 /* Deprecated */
 #define pcap_inject(p, buf, size) pcap_sendpacket(p, buf, size)
 
