@@ -86,6 +86,8 @@ else()
         set(PCPP_LIB_PREFIX "lib")
     endif()
 
+    find_package(Threads REQUIRED)
+
     # Manually create PcapPlusPlus imported targets (avoid pre-built cmake config which
     # has paths CMake can't verify at configure time)
     add_library(PcapPlusPlus::Common++ STATIC IMPORTED)
