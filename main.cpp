@@ -29,8 +29,11 @@ int example_list_interfaces()
 {
     std::cout << "=== Example 1: List Network Interfaces ===\n\n";
 
+    std::cout << "[DEBUG] Calling PcapLiveDeviceList::getInstance()...\n" << std::flush;
     const auto& devList = pcpp::PcapLiveDeviceList::getInstance();
+    std::cout << "[DEBUG] Calling getPcapLiveDevicesList()...\n" << std::flush;
     auto devices = devList.getPcapLiveDevicesList();
+    std::cout << "[DEBUG] getPcapLiveDevicesList() returned, size=" << devices.size() << "\n" << std::flush;
 
     if (devices.empty()) {
         std::cout << "No live devices found.\n\n";
