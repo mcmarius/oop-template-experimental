@@ -6,6 +6,8 @@
 #ifndef PCAP_H
 #define PCAP_H
 
+#include <stdio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -15,6 +17,7 @@ typedef struct pcap pcap_t;
 typedef struct pcap_dumper pcap_dumper_t;
 typedef struct pcap_if pcap_if_t;
 typedef struct pcap_addr pcap_addr_t;
+typedef struct pcap_send_queue pcap_send_queue_t;
 typedef int bpf_u_int32;
 typedef unsigned char u_char;
 typedef unsigned short u_short;
@@ -23,10 +26,14 @@ typedef unsigned int u_int;
 #define PCAP_ERRBUF_SIZE 256
 #define DLT_EN10MB 1
 
+/* Guard against redefinition — MinGW/Windows SDK already provide this */
+#ifndef HAVE_STRUCT_TIMEVAL
 struct timeval {
     long tv_sec;
     long tv_usec;
 };
+#define HAVE_STRUCT_TIMEVAL
+#endif
 
 struct pcap_pkthdr {
     struct timeval ts;
@@ -148,9 +155,9 @@ int pcap_set_tstamp_type_name(pcap_t *p, const char *tstamp_type_name);
 
 /* Send queue */
 int pcap_sendqueue_alloc(pcap_t *p, u_int memsize);
-void pcap_sendqueue_destroy(pcap_send_queue *queue);
-int pcap_sendqueue_queue(pcap_send_queue *queue, const struct pcap_pkthdr *pkt_header, const u_char *pkt_data);
-int pcap_sendqueue_transmit(pcap_t *p, pcap_send_queue *queue, int sync);
+void pcap_sendqueue_destroy(pcap_send_queue_t *queue);
+int pcap_sendqueue_queue(pcap_send_queue_t *queue, const struct pcap_pkthdr *pkt_header, const u_char *pkt_data);
+int pcap_sendqueue_transmit(pcap_t *p, pcap_send_queue_t *queue, int sync);
 
 /* Mode */
 int pcap_setmode(pcap_t *p, enum mode mode);
@@ -163,8 +170,6 @@ void pcap_dump_file(pcap_dumper_t *p, FILE *file);
 FILE *pcap_file(pcap_t *p);
 int pcap_get_nonblock(pcap_t *p, int *nonblock);
 int pcap_set_nonblock(pcap_t *p, int nonblock, char *errbuf);
-int pcap_get_tstamp_precision(const pcap_t *p);
-int pcap_set_tstamp_type(pcap_t *p, const char *name);
 
 /* Deprecated */
 #define pcap_inject(p, buf, size) pcap_sendpacket(p, buf, size)

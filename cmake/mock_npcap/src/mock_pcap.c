@@ -170,17 +170,14 @@ int pcap_get_tstamp_precision(pcap_t *p) { return 0; }
 int pcap_set_tstamp_precision(pcap_t *p, unsigned int tstamp_precision) { return 0; }
 
 int pcap_sendqueue_alloc(pcap_t *p, u_int memsize) { return 0; }
-void pcap_sendqueue_destroy(pcap_send_queue *queue) {}
-int pcap_sendqueue_queue(pcap_send_queue *queue, const struct pcap_pkthdr *pkt_header,
+void pcap_sendqueue_destroy(struct pcap_send_queue *queue) {}
+int pcap_sendqueue_queue(struct pcap_send_queue *queue, const struct pcap_pkthdr *pkt_header,
                          const u_char *pkt_data) { return 0; }
-int pcap_sendqueue_transmit(pcap_t *p, pcap_send_queue *queue, int sync) { return 0; }
+int pcap_sendqueue_transmit(pcap_t *p, struct pcap_send_queue *queue, int sync) { return 0; }
 
 int pcap_setmode(pcap_t *p, enum mode mode) { return 0; }
 
 int pcap_get_selectable_fd(const pcap_t *p) { return -1; }
-
-int pcap_get_tstamp_precision(const pcap_t *p) { return 0; }
-int pcap_set_tstamp_type(pcap_t *p, const char *name) { return 0; }
 
 int pcap_get_nonblock(pcap_t *p, int *nonblock) { return 0; }
 int pcap_set_nonblock(pcap_t *p, int nonblock, char *errbuf) { return 0; }
