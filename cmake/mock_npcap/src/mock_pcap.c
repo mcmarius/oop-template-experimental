@@ -133,7 +133,11 @@ int pcap_parsesrcstr(const char *str, int *type, char *device, char *subnet,
 
 pcap_t *pcap_findalldevs_ex(const char *source, struct pcap_rmtauth *auth,
                             pcap_if_t **alldevs, char *errbuf) {
-    if (errbuf) snprintf(errbuf, PCAP_ERRBUF_SIZE, "Mock: findalldevs_ex not implemented");
+    /* Return success with an empty (NULL) device list so the app can
+       gracefully handle "no devices available" instead of crashing
+       when iterating uninitialized memory. */
+    if (errbuf) snprintf(errbuf, PCAP_ERRBUF_SIZE, "Mock: no devices available");
+    if (alldevs) *alldevs = NULL;
     return NULL;
 }
 
