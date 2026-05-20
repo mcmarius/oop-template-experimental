@@ -70,23 +70,49 @@ else()
     # Set paths to extracted binaries
     set(PCPP_ROOT "${pcapplusplus_SOURCE_DIR}")
     # The archive extracts to a subdirectory named after the archive
-    # Find the actual subdirectory (handle both single and multiple subdirs)
     file(GLOB PCPP_SUBDIRS "${pcapplusplus_SOURCE_DIR}/pcapplusplus-*")
     if(PCPP_SUBDIRS)
         list(GET PCPP_SUBDIRS 0 PCPP_SUBDIR)
     else()
-        # Fallback: use the source directory directly if glob fails
         set(PCPP_SUBDIR "${pcapplusplus_SOURCE_DIR}")
     endif()
-    set(PCPP_CMAKE_DIR "${PCPP_SUBDIR}/lib/cmake/pcapplusplus")
 
-    # Include the pre-built CMake config files (these define PcapPlusPlus::Pcap++ etc.)
-    include("${PCPP_CMAKE_DIR}/PcapPlusPlusConfig.cmake")
+    # Determine library file extensions
+    if(MSVC)
+        set(PCPP_LIB_EXT "lib")
+        set(PCPP_LIB_PREFIX "")
+    else()
+        set(PCPP_LIB_EXT "a")
+        set(PCPP_LIB_PREFIX "lib")
+    endif()
+
+    # Manually create PcapPlusPlus imported targets (avoid pre-built cmake config which
+    # has paths CMake can't verify at configure time)
+    add_library(PcapPlusPlus::Common++ STATIC IMPORTED)
+    set_target_properties(PcapPlusPlus::Common++ PROPERTIES
+        IMPORTED_LOCATION "${PCPP_SUBDIR}/lib/${PCPP_LIB_PREFIX}Common++.${PCPP_LIB_EXT}"
+        INTERFACE_INCLUDE_DIRECTORIES "${PCPP_SUBDIR}/include/pcapplusplus;${PCPP_SUBDIR}/include"
+        INTERFACE_LINK_LIBRARIES "ws2_32;iphlpapi"
+    )
+
+    add_library(PcapPlusPlus::Packet++ STATIC IMPORTED)
+    set_target_properties(PcapPlusPlus::Packet++ PROPERTIES
+        IMPORTED_LOCATION "${PCPP_SUBDIR}/lib/${PCPP_LIB_PREFIX}Packet++.${PCPP_LIB_EXT}"
+        INTERFACE_INCLUDE_DIRECTORIES "${PCPP_SUBDIR}/include/pcapplusplus;${PCPP_SUBDIR}/include"
+        INTERFACE_LINK_LIBRARIES "PcapPlusPlus::Common++"
+    )
+
+    # PcapPlusPlus::Pcap++ is the main target; it depends on Common++, Packet++, and
+    # the underlying PCAP::PCAP / Packet::Packet targets (from npcap SDK or mock)
+    add_library(PcapPlusPlus::Pcap++ STATIC IMPORTED)
+    set_target_properties(PcapPlusPlus::Pcap++ PROPERTIES
+        IMPORTED_LOCATION "${PCPP_SUBDIR}/lib/${PCPP_LIB_PREFIX}Pcap++.${PCPP_LIB_EXT}"
+        INTERFACE_INCLUDE_DIRECTORIES "${PCPP_SUBDIR}/include/pcapplusplus;${PCPP_SUBDIR}/include"
+        INTERFACE_LINK_LIBRARIES "ws2_32;iphlpapi;Packet::Packet;PcapPlusPlus::Common++;PcapPlusPlus::Packet++;PCAP::PCAP;Threads::Threads"
+    )
 
     # --- Provide PCAP::PCAP and Packet::Packet targets ---
-    # These are required by PcapPlusPlus but come from the npcap SDK.
-    # For CI builds: use mock libraries.
-    # For release builds: use the real npcap SDK.
+    # These come from the npcap SDK (not redistributable). For CI, use mock libs.
     if(NOT TARGET PCAP::PCAP)
         if(DEFINED ENV{BUILDING_FOR_CI} OR NPCAP_SDK_PATH STREQUAL "")
             # CI build: use mock libraries
