@@ -138,8 +138,11 @@ pcap_t *pcap_findalldevs_ex(const char *source, struct pcap_rmtauth *auth,
 }
 
 int pcap_findalldevs(pcap_if_t **alldevs, char *errbuf) {
-    if (errbuf) snprintf(errbuf, PCAP_ERRBUF_SIZE, "Mock: findalldevs not implemented");
-    return -1;
+    /* Return success with an empty (NULL) device list so the app can
+       gracefully handle "no devices available" instead of crashing. */
+    if (errbuf) snprintf(errbuf, PCAP_ERRBUF_SIZE, "Mock: no devices available");
+    if (alldevs) *alldevs = NULL;
+    return 0;
 }
 
 void pcap_freealldevs(pcap_if_t *alldevs) {}

@@ -32,9 +32,12 @@ int example_list_interfaces()
     const auto& devList = pcpp::PcapLiveDeviceList::getInstance();
     auto devices = devList.getPcapLiveDevicesList();
 
-    std::cout << "Found " << devices.size() << " live device(s):\n\n";
+    if (devices.empty()) {
+        std::cout << "No live devices found.\n\n";
+    } else {
+        std::cout << "Found " << devices.size() << " live device(s):\n\n";
 
-    for (const auto* dev : devices) {
+        for (const auto* dev : devices) {
         std::cout << "  Interface: " << dev->getName() << "\n";
         std::cout << "    Description: " << dev->getDesc() << "\n";
         std::cout << "    MAC Address: " << dev->getMacAddress() << "\n";
@@ -49,6 +52,7 @@ int example_list_interfaces()
             }
         }
         std::cout << "\n";
+        }
     }
 
     return 0;
