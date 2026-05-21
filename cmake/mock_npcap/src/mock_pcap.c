@@ -58,7 +58,7 @@ static void free_fake_pcap(pcap_t *p) {
 
 /* --- Stub implementations --- */
 
-const char *pcap_lookupdev(char *errbuf) {
+char *pcap_lookupdev(char *errbuf) {
     if (errbuf) snprintf(errbuf, PCAP_ERRBUF_SIZE, "Mock: no devices available");
     return NULL;
 }
@@ -80,13 +80,14 @@ pcap_t *pcap_open_dead(int linktype, int snaplen) {
 }
 
 pcap_t *pcap_open_dead_with_tstamp_precision(int linktype, int snaplen,
-                                              unsigned int tstamp_precision) {
+                                              u_int tstamp_precision) {
     (void)tstamp_precision;
     return alloc_fake_pcap(0);
 }
 
-pcap_t *pcap_open_offline_with_tstamp_precision(const char *fname, char *errbuf,
-                                                 unsigned int tstamp_precision) {
+pcap_t *pcap_open_offline_with_tstamp_precision(const char *fname, u_int tstamp_precision,
+                                                 char *errbuf) {
+    (void)tstamp_precision;
     if (errbuf) snprintf(errbuf, PCAP_ERRBUF_SIZE, "Mock: offline open not implemented");
     return NULL;
 }
@@ -98,18 +99,24 @@ pcap_t *pcap_create(const char *device, char *errbuf) {
 
 int pcap_activate(pcap_t *p) { return 0; }
 
-int pcap_close(pcap_t *p) {
+void pcap_close(pcap_t *p) {
     free_fake_pcap(p);
-    return 0;
 }
 
 int pcap_loop(pcap_t *p, int cnt, pcap_handler callback, u_char *user) { return 0; }
 
 int pcap_dispatch(pcap_t *p, int cnt, pcap_handler callback, u_char *user) { return 0; }
 
-int pcap_next(pcap_t *p, struct pcap_pkthdr *h) {
+const u_char *pcap_next(pcap_t *p, struct pcap_pkthdr *h) {
     (void)p;
     (void)h;
+    return NULL;
+}
+
+int pcap_next_ex(pcap_t *p, struct pcap_pkthdr **h, const u_char **sp) {
+    (void)p;
+    (void)h;
+    (void)sp;
     return -1;
 }
 
@@ -140,22 +147,27 @@ int pcap_setfilter(pcap_t *p, struct bpf_program *fp) {
     return -1;
 }
 
-int pcap_setdirection(pcap_t *p, enum pcap_direction d) {
+int pcap_setdirection(pcap_t *p, pcap_direction_t d) {
     (void)p;
     (void)d;
     return 0;
 }
 
-int pcap_geterr(pcap_t *p) {
-    if (!p) return -1;
-    return p->error_code;
+char *pcap_geterr(pcap_t *p) {
+    if (!p) return "Invalid pcap descriptor";
+    if (p->errbuf[0] == '\0') {
+        snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "Mock pcap error %d", p->error_code);
+    }
+    return p->errbuf;
 }
 
 void pcap_perror(pcap_t *p, const char *prefix) {
-    fprintf(stderr, "%s: Mock pcap error\n", prefix ? prefix : "pcap");
+    fprintf(stderr, "%s: %s\n", prefix ? prefix : "pcap",
+            p ? pcap_geterr(p) : "Invalid pcap descriptor");
 }
 
-char *pcap_strerror(int error) {
+const char *pcap_strerror(int error) {
+    (void)error;
     return "Mock pcap error";
 }
 
@@ -193,7 +205,7 @@ int pcap_offline_filter(const struct bpf_program *fp, const struct pcap_pkthdr *
     return 0;
 }
 
-int pcap_datalink(const pcap_t *p) { return DLT_EN10MB; }
+int pcap_datalink(pcap_t *p) { (void)p; return DLT_EN10MB; }
 
 int pcap_datalink_ext(pcap_t *p) { return DLT_EN10MB; }
 
@@ -203,22 +215,35 @@ int pcap_set_datalink(pcap_t *p, int dlt) { return -1; }
 
 void pcap_free_datalinks(int *dlt_list) {}
 
-int pcap_datalink_val_to_name(int dlt) {
-    return -1;
+const char *pcap_datalink_val_to_name(int dlt) {
+    (void)dlt;
+    return "en10mb";
 }
 
 const char *pcap_datalink_val_to_description(int dlt) {
-    return "Mock link type";
+    (void)dlt;
+    return "Ethernet";
 }
 
-int pcap_createsrcstr(char *str, int size, const char *source, const char *port,
-                      const char *name, int type, char *errbuf) {
+int pcap_createsrcstr(char *source, int type, const char *host,
+                      const char *port, const char *name, char *errbuf) {
+    (void)source;
+    (void)type;
+    (void)host;
+    (void)port;
+    (void)name;
     if (errbuf) snprintf(errbuf, PCAP_ERRBUF_SIZE, "Mock: srcstr creation not implemented");
     return -1;
 }
 
-int pcap_parsesrcstr(const char *str, int *type, char *device, char *subnet,
-                     char *netmask, char *port, char *errbuf) {
+int pcap_parsesrcstr(const char *source, int *type, char *host,
+                     char *port, char *name, char *errbuf) {
+    (void)source;
+    (void)type;
+    (void)host;
+    (void)port;
+    (void)name;
+    (void)errbuf;
     return -1;
 }
 
@@ -261,7 +286,7 @@ void pcap_dump(u_char *user, const struct pcap_pkthdr *h, const u_char *sp) {}
 
 int pcap_dump_flush(pcap_dumper_t *p) { return 0; }
 
-int pcap_dump_close(pcap_dumper_t *p) { return 0; }
+void pcap_dump_close(pcap_dumper_t *p) { (void)p; }
 
 int pcap_set_snaplen(pcap_t *p, int snaplen) { return 0; }
 int pcap_set_promisc(pcap_t *p, int promisc) { return 0; }
@@ -273,17 +298,35 @@ int pcap_list_tstamp_types(pcap_t *p, int **tstamp_types) { return -1; }
 void pcap_free_tstamp_types(int *tstamp_types) {}
 int pcap_set_tstamp_type(pcap_t *p, int tstamp_type) { return 0; }
 int pcap_get_tstamp_precision(pcap_t *p) { return 0; }
-int pcap_set_tstamp_precision(pcap_t *p, unsigned int tstamp_precision) { return 0; }
+int pcap_set_tstamp_precision(pcap_t *p, int tstamp_precision) {
+    (void)tstamp_precision;
+    return 0;
+}
 
-int pcap_sendqueue_alloc(pcap_t *p, u_int memsize) { return 0; }
-void pcap_sendqueue_destroy(struct pcap_send_queue *queue) {}
+struct pcap_send_queue *pcap_sendqueue_alloc(u_int memsize) {
+    (void)memsize;
+    return NULL;
+}
+void pcap_sendqueue_destroy(struct pcap_send_queue *queue) { (void)queue; }
 int pcap_sendqueue_queue(struct pcap_send_queue *queue, const struct pcap_pkthdr *pkt_header,
-                         const u_char *pkt_data) { return 0; }
-int pcap_sendqueue_transmit(pcap_t *p, struct pcap_send_queue *queue, int sync) { return 0; }
+                         const u_char *pkt_data) {
+    (void)queue;
+    (void)pkt_header;
+    (void)pkt_data;
+    return 0;
+}
+u_int pcap_sendqueue_transmit(pcap_t *p, struct pcap_send_queue *queue, int sync) {
+    (void)p;
+    (void)queue;
+    (void)sync;
+    return 0;
+}
 
 int pcap_setmode(pcap_t *p, enum mode mode) { return 0; }
 
-int pcap_get_selectable_fd(const pcap_t *p) { return -1; }
+int pcap_get_selectable_fd(pcap_t *p) { (void)p; return -1; }
+
+int pcap_snapshot(pcap_t *p) { (void)p; return 0; }
 
 int pcap_get_nonblock(pcap_t *p, int *nonblock) { return 0; }
 int pcap_set_nonblock(pcap_t *p, int nonblock, char *errbuf) { return 0; }
