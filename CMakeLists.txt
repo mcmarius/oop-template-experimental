@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.28)
 
 # NOTE: update executable name in .github/workflows/cmake.yml:25 when changing executable name in this file
 # for now, the project name is used as the executable name
@@ -21,7 +21,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(cmake/Options.cmake)
 include(cmake/CompilerFlags.cmake)
 include(cmake/CopyHelper.cmake)
-set(PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}")
 
 # external dependencies with FetchContent
 include(FetchContent)
@@ -29,9 +28,10 @@ include(FetchContent)
 set(FETCHCONTENT_QUIET OFF CACHE INTERNAL "Override verbose output" FORCE)
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE INTERNAL "Override update strategy" FORCE)
 
+# include(CTest) declares BUILD_TESTING (default ON)
+include(CTest)
+
 add_subdirectory(src)
-if(RUN_TESTS)
-    include(CTest)
-    enable_testing()
+if(BUILD_TESTING)
     add_subdirectory(tests)
 endif ()

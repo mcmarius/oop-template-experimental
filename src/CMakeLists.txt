@@ -22,7 +22,8 @@
 
 ###############################################################################
 
-add_library(${MAIN_PROJECT_LIB_NAME})
+# always STATIC (simpler); TBD if we ever want dynamic for this; BUILD_SHARED_LIBS is for ext deps
+add_library(${MAIN_PROJECT_LIB_NAME} STATIC)
 target_sources(${MAIN_PROJECT_LIB_NAME}
     PRIVATE
         exemplu_test_oop/BankAccount.cpp
@@ -44,11 +45,13 @@ target_include_directories(${MAIN_PROJECT_LIB_NAME} PUBLIC
 target_include_directories(${MAIN_EXECUTABLE_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 )
-target_include_directories(${MAIN_PROJECT_LIB_NAME} SYSTEM PRIVATE
-    ${CMAKE_SOURCE_DIR}/ext
+# vendored external deps should be private by default
+# a public dep is an interface commitment, shared by app/ and tests/
+target_include_directories(${MAIN_PROJECT_LIB_NAME} SYSTEM PUBLIC
+    ${EXT_PUBLIC_DIR}
 )
-target_include_directories(${MAIN_EXECUTABLE_NAME} SYSTEM PRIVATE
-    ${CMAKE_SOURCE_DIR}/ext
+target_include_directories(${MAIN_PROJECT_LIB_NAME} SYSTEM PRIVATE
+    ${EXT_PRIVATE_DIR}
 )
 
 target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE ${MAIN_PROJECT_LIB_NAME})
@@ -63,11 +66,11 @@ target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE ${MAIN_PROJECT_LIB_NAME})
 ###############################################################################
 
 # copy binaries to "bin" folder; these are uploaded as artifacts on each release
-# DESTINATION_DIR is set as "bin" in cmake/Options.cmake:6
+# DESTINATION_DIR is set as "bin" in cmake/Options.cmake
 
 install(TARGETS ${MAIN_PROJECT_NAME} DESTINATION ${DESTINATION_DIR})
 if(APPLE)
-    install(FILES ${PROJECT_ROOT}/launcher.command DESTINATION ${DESTINATION_DIR})
+    install(FILES ${CMAKE_SOURCE_DIR}/launcher.command DESTINATION ${DESTINATION_DIR})
 endif()
 copy_files(FILES tastatura.txt DIRECTORY assets COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE_NAME})
 

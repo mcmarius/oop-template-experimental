@@ -12,10 +12,6 @@ inputs:
     description: 'Deps cache key'
     required: false
     default: 'cache-deps'
-  run_tests:
-    description: 'Enable or disable tests'
-    required: false
-    default: 'OFF'
 
 runs:
   using: "composite"
@@ -82,8 +78,7 @@ runs:
           -c ${{ env.BUILD_TYPE }} \
           -e "-DPROJECT_WARNINGS_AS_ERRORS=${{ inputs.warnings_as_errors }} -DGITHUB_ACTIONS=${GITHUB_ACTIONS} ${{ inputs.custom_flags }}" \
           -i ${GITHUB_WORKSPACE}/artifacts \
-          -s ${GITHUB_WORKSPACE} \
-          -t "${{ inputs.run_tests }}"
+          -s ${GITHUB_WORKSPACE}
 
     - name: Configure CMake
       shell: bash
@@ -95,8 +90,7 @@ runs:
           -c ${{ env.BUILD_TYPE }} \
           -e "-DPROJECT_WARNINGS_AS_ERRORS=${{ inputs.warnings_as_errors }} -DGITHUB_ACTIONS=${GITHUB_ACTIONS} ${{ inputs.custom_flags }}" \
           -i ${GITHUB_WORKSPACE}/artifacts \
-          -s ${GITHUB_WORKSPACE} \
-          -t "${{ inputs.run_tests }}"
+          -s ${GITHUB_WORKSPACE}
 
 # https://docs.github.com/en/actions/creating-actions/creating-a-composite-action
 # https://github.com/GuillaumeFalourd/poc-github-actions/blob/main/.github/workflows/36-local-action.yml

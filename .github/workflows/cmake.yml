@@ -176,7 +176,7 @@ jobs:
             # cmake_generator: "Ninja Multi-Config"
             # This env runs address sanitizers
             runs_asan: true
-            runs_tests: 'OFF'
+            runs_tests: 'ON'
 
             # renovate: depName=windows
           - os: windows-2025
@@ -219,31 +219,30 @@ jobs:
         with:
           custom_flags: ${{ matrix.cmake_flags }}
           warnings_as_errors: 'ON'
-          run_tests: ${{ matrix.runs_tests }}
 
       - name: Build
         run: |
           bash ./scripts/cmake.sh build -c ${{ env.BUILD_TYPE }}
-
-      - name: Run tests
-        if: ${{ matrix.runs_tests == 'ON' }}
-        run: |
-          bash ./scripts/cmake.sh test -c ${{ env.BUILD_TYPE }}
 
       - name: Install
         # Use CMake to "install" build artifacts (only interested in CMake registered targets) to our custom artifacts directory
         run: |
           bash ./scripts/cmake.sh install -c ${{ env.BUILD_TYPE }} -i artifacts
 
-      - name: Move artifacts
+      - name: Copy artifacts
         run: |
           mkdir ${{ env.ZIP_NAME }}
           shopt -s dotglob
-          mv artifacts/${{ env.BIN_DIR }}/* ${{ env.ZIP_NAME }}
+          cp -r artifacts/${{ env.BIN_DIR }}/* ${{ env.ZIP_NAME }}
           ls -la ${{ env.ZIP_NAME }}
 
       - name: Process artifacts
         uses: ./.github/actions/process-artifacts
+
+      - name: Run tests
+        if: ${{ matrix.runs_tests == 'ON' }}
+        run: |
+          bash ./scripts/cmake.sh test -c ${{ env.BUILD_TYPE }} -r
 
       - name: Upload Artifacts
         # renovate: datasource=github-tags depName=actions/upload-artifact versioning=loose

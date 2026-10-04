@@ -3,7 +3,7 @@
 DEFAULT_BUILD_DIR="build"
 DEFAULT_BUILD_TYPE="Debug"
 DEFAULT_INSTALL_DIR="install_dir"
-DEFAULT_RUN_TESTS='OFF'
+DEFAULT_BUILD_TESTING='ON'
 
 # Pentru a folosi biblioteci instalate deja local cu FetchContent:
 # ./scripts/cmake.sh configure -e "-DFETCHCONTENT_BASE_DIR=~/.local/fetchcontent-deps"
@@ -17,7 +17,7 @@ configure() {
     BUILD_DIR="${DEFAULT_BUILD_DIR}"
     BUILD_TYPE="${DEFAULT_BUILD_TYPE}"
     INSTALL_DIR="${DEFAULT_INSTALL_DIR}"
-    RUN_TESTS="${DEFAULT_RUN_TESTS}"
+    BUILD_TESTING="${DEFAULT_BUILD_TESTING}"
     SOURCE_DIR="."
     CMAKE_OPTS=()
 
@@ -35,9 +35,9 @@ configure() {
         ;;
         s) SOURCE_DIR="${OPTARG}"
         ;;
-        t) RUN_TESTS="${OPTARG}"
-           if [[ "${RUN_TESTS}" != 'ON' && "${RUN_TESTS}" != 'OFF' ]]; then
-            echo "Invalid value for -t: $RUN_TESTS. Use ON or OFF."
+        t) BUILD_TESTING="${OPTARG}"
+           if [[ "${BUILD_TESTING}" != 'ON' && "${BUILD_TESTING}" != 'OFF' ]]; then
+            echo "Invalid value for -t: $BUILD_TESTING. Use ON or OFF."
             exit 1
            fi
         ;;
@@ -48,7 +48,7 @@ configure() {
             -g (generator)\n\
             -i (install dir prefix)\n\
             -s (source dir)\n\
-            -t (run tests ON/OFF)\n"\
+            -t (build tests ON/OFF -> -DBUILD_TESTING)\n"\
             "${opt}"
            exit 1
         ;;
@@ -60,7 +60,7 @@ configure() {
           -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
           -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-          -DRUN_TESTS="${RUN_TESTS}" \
+          -DBUILD_TESTING="${BUILD_TESTING}" \
           "${CMAKE_OPTS[@]}"
 }
 
@@ -100,27 +100,34 @@ build() {
 }
 
 test() {
-    # ctest --test-dir build -C Debug --verbose --no-compress-output
+    # bash ./scripts/run_tests.sh -b build -c Debug -r
     #
     BUILD_DIR="${DEFAULT_BUILD_DIR}"
-    BUILD_TYPE="${DCMAKE_BUILD_TYPE}"
+    BUILD_TYPE="${DEFAULT_BUILD_TYPE}"
+    RUN_TESTS_SCRIPT_OPTS=()    # -r: zero registered tests is an error, see scripts/run_tests.sh
 
-    while getopts ":b:c:" opt; do
+    while getopts ":b:c:r" opt; do
         case "${opt}" in
           b) BUILD_DIR="${OPTARG}"
           ;;
           c) BUILD_TYPE="${OPTARG}"
           ;;
+          r) RUN_TESTS_SCRIPT_OPTS+=("-r")
+          ;;
           *) printf "Unknown option %s; available options: \n\
               -b (build dir)\n\
-              -c (CMake config build type)\n"\
+              -c (CMake config build type)\n\
+              -r (fail when no test is registered)\n"\
               "${opt}"
             exit 1
           ;;
         esac
     done
 
-    ctest --test-dir "${BUILD_DIR}" -C "${BUILD_TYPE}" --verbose --no-compress-output
+    bash "$(dirname "${BASH_SOURCE[0]}")/run_tests.sh" \
+          -b "${BUILD_DIR}" \
+          -c "${BUILD_TYPE}" \
+          "${RUN_TESTS_SCRIPT_OPTS[@]}"
 }
 
 install() {
